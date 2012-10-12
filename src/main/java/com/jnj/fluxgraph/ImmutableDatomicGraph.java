@@ -21,7 +21,7 @@ public class ImmutableDatomicGraph extends DatomicGraph {
     private DatomicGraph originGraph;
 
     public ImmutableDatomicGraph(final String graphURI, DatomicGraph originGraph, Set<Object> differenceFacts) {
-        super(graphURI, true);
+        super(graphURI);
         this.originGraph = originGraph;
         // Add the additional meta model
         try {
@@ -39,7 +39,7 @@ public class ImmutableDatomicGraph extends DatomicGraph {
     }
 
     public ImmutableDatomicGraph(final String graphURI, final Date date) {
-        super(graphURI, true);
+        super(graphURI);
         this.checkpointTime.set(date.getTime());
     }
 

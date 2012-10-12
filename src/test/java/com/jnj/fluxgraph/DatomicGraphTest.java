@@ -73,7 +73,7 @@ public class DatomicGraphTest extends GraphTest {
     }
 
     public Graph generateGraph() {
-        this.currentGraph = new DatomicGraph("datomic:mem://blueprints" + UUID.randomUUID(), true);
+        this.currentGraph = new DatomicGraph("datomic:mem://tinkerpop" + UUID.randomUUID());
         return this.currentGraph;
     }
 
@@ -84,6 +84,7 @@ public class DatomicGraphTest extends GraphTest {
                 method.invoke(testSuite);
                 try {
                     if (this.currentGraph != null)
+                        //this.currentGraph.clear();
                         this.currentGraph.shutdown();
                 } catch (Exception e) {
                 }

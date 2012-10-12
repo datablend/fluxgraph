@@ -1,5 +1,6 @@
 package com.jnj.fluxgraph;
 
+import clojure.lang.Keyword;
 import com.tinkerpop.blueprints.*;
 import com.tinkerpop.blueprints.util.ExceptionFactory;
 import com.tinkerpop.blueprints.util.StringFactory;
@@ -82,7 +83,7 @@ public class DatomicGraph implements MetaGraph<Database>, KeyIndexableGraph, Tim
         FEATURES.supportsThreadedTransactions = false;
     }
 
-    public DatomicGraph(final String graphURI, boolean setupMetaModel) {
+    public DatomicGraph(final String graphURI) {
         this.graphURI = graphURI;
         Peer.createDatabase(graphURI);
         // Retrieve the connection
@@ -90,7 +91,7 @@ public class DatomicGraph implements MetaGraph<Database>, KeyIndexableGraph, Tim
 
         try {
             // Setup the meta model for the graph
-            if (setupMetaModel) {
+            if (requiresMetaModel()) {
                 setupMetaModel();
             }
             // Retrieve the relevant ids for the properties (for raw index access later on)
@@ -386,6 +387,13 @@ public class DatomicGraph implements MetaGraph<Database>, KeyIndexableGraph, Tim
         }
     }
 
+    // Helper method to check whether the meta model of the graph still needs to be setup
+    protected boolean requiresMetaModel() {
+        return !Peer.q("[:find ?entity " +
+                       ":in $ " +
+                       ":where [?entity :db/ident :graph.element/type] ] ", getRawGraph()).iterator().hasNext();
+    }
+
     // Setup of the various attribute types required for DatomicGraph
     protected void setupMetaModel() throws ExecutionException, InterruptedException {
 
@@ -458,8 +466,8 @@ public class DatomicGraph implements MetaGraph<Database>, KeyIndexableGraph, Tim
                               ":db/index", true,
                               ":db.install/_attribute", ":db.part/db"));
 
-        String addTransactionInfoCode = "Object transactInfoId = datomic.Peer.tempid(\":db.part/user\");\n" +
-                                        "return datomic.Util.list(datomic.Util.list(\":db/add\", transactInfoId, \":graph.element/previousTransaction/transactionId\", lastTransaction), datomic.Util.list(\":db/add\", transactInfoId, \":graph.element/previousTransaction/elementId\", id), datomic.Util.list(\":db/add\", datomic.Peer.tempid(\":db.part/tx\"), \":graph.element/previousTransaction\", transactInfoId));\n";
+        String addTransactionInfoCode = "Object transactInfoId = tempid(\":db.part/user\");\n" +
+                                        "return list(list(\":db/add\", transactInfoId, \":graph.element/previousTransaction/transactionId\", lastTransaction), list(\":db/add\", transactInfoId, \":graph.element/previousTransaction/elementId\", id), list(\":db/add\", tempid(\":db.part/tx\"), \":graph.element/previousTransaction\", transactInfoId));\n";
 
         // Database function that retrieves the previous transaction and sets the new one
         tx.get().add(Util.map(":db/id", Peer.tempid(":db.part/user"),
