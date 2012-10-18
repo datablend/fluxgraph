@@ -126,7 +126,7 @@ public class DatomicGraph implements MetaGraph<Database>, KeyIndexableGraph, Tim
         if (null == id)
             throw ExceptionFactory.edgeIdCanNotBeNull();
         try {
-            return new DatomicEdge(this, null, Long.valueOf(id.toString()).longValue());
+            return new DatomicEdge(this, this.getRawGraph(), Long.valueOf(id.toString()).longValue());
         } catch (NumberFormatException e) {
             return null;
         } catch (RuntimeException re) {
@@ -136,8 +136,8 @@ public class DatomicGraph implements MetaGraph<Database>, KeyIndexableGraph, Tim
 
     @Override
     public Iterable<Edge> getEdges() {
-        Iterable<Datom> edges = connection.db().datoms(Database.AVET, GRAPH_ELEMENT_TYPE, GRAPH_ELEMENT_TYPE_EDGE);
-        return new DatomicIterable<Edge>(edges, this, null, Edge.class);
+        Iterable<Datom> edges = this.getRawGraph().datoms(Database.AVET, GRAPH_ELEMENT_TYPE, GRAPH_ELEMENT_TYPE_EDGE);
+        return new DatomicIterable<Edge>(edges, this, this.getRawGraph(), Edge.class);
     }
 
     @Override
@@ -190,7 +190,7 @@ public class DatomicGraph implements MetaGraph<Database>, KeyIndexableGraph, Tim
             throw ExceptionFactory.vertexIdCanNotBeNull();
         try {
             final Long longId = Long.valueOf(id.toString()).longValue();
-            return new DatomicVertex(this, null, longId);
+            return new DatomicVertex(this, this.getRawGraph(), longId);
         } catch (NumberFormatException e) {
             return null;
         } catch (RuntimeException re) {
@@ -200,8 +200,8 @@ public class DatomicGraph implements MetaGraph<Database>, KeyIndexableGraph, Tim
 
     @Override
     public Iterable<Vertex> getVertices() {
-        Iterable<Datom> vertices = getRawGraph(new Date(Long.MAX_VALUE)).datoms(Database.AVET, this.GRAPH_ELEMENT_TYPE, this.GRAPH_ELEMENT_TYPE_VERTEX);
-        return new DatomicIterable<Vertex>(vertices, this, null, Vertex.class);
+        Iterable<Datom> vertices = this.getRawGraph().datoms(Database.AVET, this.GRAPH_ELEMENT_TYPE, this.GRAPH_ELEMENT_TYPE_VERTEX);
+        return new DatomicIterable<Vertex>(vertices, this, this.getRawGraph(), Vertex.class);
     }
 
     @Override
