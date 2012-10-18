@@ -16,11 +16,11 @@ import java.util.concurrent.ExecutionException;
  * Time: 16:42
  * To change this template use File | Settings | File Templates.
  */
-public class ImmutableDatomicGraph extends DatomicGraph {
+public class ImmutableFluxGraph extends FluxGraph {
 
-    private DatomicGraph originGraph;
+    private FluxGraph originGraph;
 
-    public ImmutableDatomicGraph(final String graphURI, DatomicGraph originGraph, Set<Object> differenceFacts) {
+    public ImmutableFluxGraph(final String graphURI, FluxGraph originGraph, Set<Object> differenceFacts) {
         super(graphURI);
         this.originGraph = originGraph;
         // Add the additional meta model
@@ -32,45 +32,45 @@ public class ImmutableDatomicGraph extends DatomicGraph {
             }
             transact();
         } catch (ExecutionException e) {
-            throw new RuntimeException(DatomicGraph.DATOMIC_ERROR_EXCEPTION_MESSAGE);
+            throw new RuntimeException(FluxGraph.DATOMIC_ERROR_EXCEPTION_MESSAGE);
         } catch (InterruptedException e) {
-            throw new RuntimeException(DatomicGraph.DATOMIC_ERROR_EXCEPTION_MESSAGE);
+            throw new RuntimeException(FluxGraph.DATOMIC_ERROR_EXCEPTION_MESSAGE);
         }
     }
 
-    public ImmutableDatomicGraph(final String graphURI, final Date date) {
+    public ImmutableFluxGraph(final String graphURI, final Date date) {
         super(graphURI);
         this.checkpointTime.set(date.getTime());
     }
 
     @Override
     public TimeAwareEdge addEdge(Object id, Vertex outVertex, Vertex inVertex, String label) {
-        throw new IllegalArgumentException("DatomicGraph instance is immutable");
+        throw new IllegalArgumentException("FluxGraph instance is immutable");
     }
 
     @Override
     public void removeEdge(Edge edge) {
-        throw new IllegalArgumentException("DatomicGraph instance is immutable");
+        throw new IllegalArgumentException("FluxGraph instance is immutable");
     }
 
     @Override
     public TimeAwareVertex addVertex(Object id) {
-        throw new IllegalArgumentException("DatomicGraph instance is immutable");
+        throw new IllegalArgumentException("FluxGraph instance is immutable");
     }
 
     @Override
     public void removeVertex(Vertex vertex) {
-        throw new IllegalArgumentException("DatomicGraph instance is immutable");
+        throw new IllegalArgumentException("FluxGraph instance is immutable");
     }
 
     @Override
     public void setTransactionTime(Date transactionTime) {
-        throw new IllegalArgumentException("DatomicGraph instance is immutable");
+        throw new IllegalArgumentException("FluxGraph instance is immutable");
     }
 
     @Override
     public void clear() {
-        throw new IllegalArgumentException("DatomicGraph instance is immutable");
+        throw new IllegalArgumentException("FluxGraph instance is immutable");
     }
 
     protected void setupAdditionalMetaModel() throws ExecutionException, InterruptedException {

@@ -11,32 +11,32 @@ import java.util.List;
 /**
  * @author Davy Suvee (http://datablend.be)
  */
-public class DatomicIterable<T extends Element> implements CloseableIterable<T> {
+public class FluxIterable<T extends Element> implements CloseableIterable<T> {
 
     private Iterable<Datom> datoms;
     private Collection<List<Object>> objects;
     private List<Object> ids;
-    private final DatomicGraph graph;
+    private final FluxGraph graph;
     private final Database database;
     private Class<T> clazz;
 
-    private DatomicIterable(final DatomicGraph graph, final Database database, final Class<T> clazz) {
+    private FluxIterable(final FluxGraph graph, final Database database, final Class<T> clazz) {
         this.graph = graph;
         this.clazz = clazz;
         this.database = database;
     }
 
-    public DatomicIterable(final Iterable<Datom> datoms, final DatomicGraph graph, final Database database, final Class<T> clazz) {
+    public FluxIterable(final Iterable<Datom> datoms, final FluxGraph graph, final Database database, final Class<T> clazz) {
         this(graph, database, clazz);
         this.datoms = datoms;
     }
 
-    public DatomicIterable(final Collection<List<Object>> objects, final DatomicGraph graph, final Database database, final Class<T> clazz) {
+    public FluxIterable(final Collection<List<Object>> objects, final FluxGraph graph, final Database database, final Class<T> clazz) {
         this(graph, database, clazz);
         this.objects = objects;
     }
 
-    public DatomicIterable(final List<Object> ids, final DatomicGraph graph, final Database database, final Class<T> clazz) {
+    public FluxIterable(final List<Object> ids, final FluxGraph graph, final Database database, final Class<T> clazz) {
         this(graph, database, clazz);
         this.ids = ids;
     }
@@ -66,9 +66,9 @@ public class DatomicIterable<T extends Element> implements CloseableIterable<T> 
             Object object = getNext();
             T ret = null;
             if (clazz == Vertex.class) {
-                ret = (T) new DatomicVertex(graph, database, object);
+                ret = (T) new FluxVertex(graph, database, object);
             } else if (clazz == Edge.class) {
-                ret = (T) new DatomicEdge(graph, database, object);
+                ret = (T) new FluxEdge(graph, database, object);
             } else {
                 throw new IllegalStateException();
             }

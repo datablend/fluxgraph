@@ -16,16 +16,16 @@ import java.util.*;
 /**
  * @author Davy Suvee (http://datablend.be)
  */
-public abstract class DatomicElement implements TimeAwareElement {
+public abstract class FluxElement implements TimeAwareElement {
 
     protected final Database database;
-    protected final DatomicGraph datomicGraph;
+    protected final FluxGraph fluxGraph;
     protected Object uuid;
     protected Object id;
 
-    protected DatomicElement(final DatomicGraph datomicGraph, final Database database) {
+    protected FluxElement(final FluxGraph fluxGraph, final Database database) {
         this.database = database;
-        this.datomicGraph = datomicGraph;
+        this.fluxGraph = fluxGraph;
         // UUID used to retrieve the actual datomic id later on
         uuid = Keyword.intern(UUID.randomUUID().toString());
         id = Peer.tempid(":graph");
@@ -38,7 +38,7 @@ public abstract class DatomicElement implements TimeAwareElement {
 
     @Override
     public Object getTimeId() {
-        return DatomicUtil.getActualTimeId(getDatabase(), this);
+        return FluxUtil.getActualTimeId(getDatabase(), this);
     }
 
     @Override
@@ -65,8 +65,8 @@ public abstract class DatomicElement implements TimeAwareElement {
         Iterator<Keyword> propertiesit = properties.iterator();
         while (propertiesit.hasNext()) {
             Keyword property = propertiesit.next();
-            if (!DatomicUtil.isReservedKey(property.toString())) {
-                finalproperties.add(DatomicUtil.getPropertyName(property));
+            if (!FluxUtil.isReservedKey(property.toString())) {
+                finalproperties.add(FluxUtil.getPropertyName(property));
             }
         }
         return finalproperties;
@@ -77,13 +77,13 @@ public abstract class DatomicElement implements TimeAwareElement {
         if (isDeleted()) {
             throw new IllegalArgumentException("It is not possible to get properties on a deleted element");
         }
-        if (!DatomicUtil.isReservedKey(key)) {
+        if (!FluxUtil.isReservedKey(key)) {
             Set properties = getDatabase().entity(id).keySet();
             Iterator<Keyword> propertiesit = properties.iterator();
             // We need to iterate, as we don't know the exact type (although we ensured that only one attribute will have that name)
             while (propertiesit.hasNext()) {
                 Keyword property = propertiesit.next();
-                String propertyname = DatomicUtil.getPropertyName(property);
+                String propertyname = FluxUtil.getPropertyName(property);
                 if (key.equals(propertyname)) {
                     return getDatabase().entity(id).get(property);
                 }
@@ -106,47 +106,47 @@ public abstract class DatomicElement implements TimeAwareElement {
         if (key.equals(StringFactory.EMPTY_STRING))
             throw ExceptionFactory.elementKeyCanNotBeEmpty();
         // A user-defined property
-        if (!DatomicUtil.isReservedKey(key)) {
+        if (!FluxUtil.isReservedKey(key)) {
             // If the property does not exist yet, create the attribute if required and create the appropriate transaction
             if (getProperty(key) == null) {
                 // We first need to create the new attribute on the fly
-                DatomicUtil.createAttributeDefinition(key, value.getClass(), this.getClass(), datomicGraph);
-                datomicGraph.addToTransaction(Util.map(":db/id", id,
-                        DatomicUtil.createKey(key, value.getClass(), this.getClass()), value));
+                FluxUtil.createAttributeDefinition(key, value.getClass(), this.getClass(), fluxGraph);
+                fluxGraph.addToTransaction(Util.map(":db/id", id,
+                        FluxUtil.createKey(key, value.getClass(), this.getClass()), value));
             }
             else {
                 // Value types match, just perform an update
                 if (getProperty(key).getClass().equals(value.getClass())) {
-                    datomicGraph.addToTransaction(Util.map(":db/id", id,
-                            DatomicUtil.createKey(key, value.getClass(), this.getClass()), value));
+                    fluxGraph.addToTransaction(Util.map(":db/id", id,
+                            FluxUtil.createKey(key, value.getClass(), this.getClass()), value));
                 }
                 // Value types do not match. Retract original fact and add new one
                 else {
-                    DatomicUtil.createAttributeDefinition(key, value.getClass(), this.getClass(), datomicGraph);
-                    datomicGraph.addToTransaction(Util.list(":db/retract", id,
-                            DatomicUtil.createKey(key, value.getClass(), this.getClass()), getProperty(key)));
-                    datomicGraph.addToTransaction(Util.map(":db/id", id,
-                            DatomicUtil.createKey(key, value.getClass(), this.getClass()), value));
+                    FluxUtil.createAttributeDefinition(key, value.getClass(), this.getClass(), fluxGraph);
+                    fluxGraph.addToTransaction(Util.list(":db/retract", id,
+                            FluxUtil.createKey(key, value.getClass(), this.getClass()), getProperty(key)));
+                    fluxGraph.addToTransaction(Util.map(":db/id", id,
+                            FluxUtil.createKey(key, value.getClass(), this.getClass()), value));
                 }
             }
         }
         // A datomic graph specific property
         else {
-            datomicGraph.addToTransaction(Util.map(":db/id", id,
+            fluxGraph.addToTransaction(Util.map(":db/id", id,
                     key, value));
         }
-        datomicGraph.addTransactionInfo(this);
-        datomicGraph.transact();
+        fluxGraph.addTransactionInfo(this);
+        fluxGraph.transact();
     }
 
     public Interval getTimeInterval() {
-        DateTime startTime = new DateTime(DatomicUtil.getTransactionDate(datomicGraph, getTimeId()));
+        DateTime startTime = new DateTime(FluxUtil.getTransactionDate(fluxGraph, getTimeId()));
         TimeAwareElement nextElement = this.getNextVersion();
         if (nextElement == null) {
             return new Interval(startTime, new DateTime(Long.MAX_VALUE));
         }
         else {
-            DateTime stopTime = new DateTime(DatomicUtil.getTransactionDate(datomicGraph, nextElement.getTimeId()));
+            DateTime stopTime = new DateTime(FluxUtil.getTransactionDate(fluxGraph, nextElement.getTimeId()));
             return new Interval(startTime, stopTime);
         }
     }
@@ -156,13 +156,13 @@ public abstract class DatomicElement implements TimeAwareElement {
         validate();
         Object oldvalue = getProperty(key);
         if (oldvalue != null) {
-            if (!DatomicUtil.isReservedKey(key)) {
-                datomicGraph.addToTransaction(Util.list(":db/retract", id,
-                                       DatomicUtil.createKey(key, oldvalue.getClass(), this.getClass()), oldvalue));
+            if (!FluxUtil.isReservedKey(key)) {
+                fluxGraph.addToTransaction(Util.list(":db/retract", id,
+                                       FluxUtil.createKey(key, oldvalue.getClass(), this.getClass()), oldvalue));
             }
         }
-        datomicGraph.addTransactionInfo(this);
-        datomicGraph.transact();
+        fluxGraph.addTransactionInfo(this);
+        fluxGraph.transact();
         return oldvalue;
     }
 
@@ -170,7 +170,7 @@ public abstract class DatomicElement implements TimeAwareElement {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        DatomicElement that = (DatomicElement) o;
+        FluxElement that = (FluxElement) o;
         if (id != null ? !id.equals(that.id) : that.id != null) return false;
         return true;
     }
@@ -182,7 +182,7 @@ public abstract class DatomicElement implements TimeAwareElement {
 
     protected Database getDatabase() {
         if (database == null) {
-            return datomicGraph.getRawGraph();
+            return fluxGraph.getRawGraph();
         }
         return database;
     }
@@ -209,7 +209,7 @@ public abstract class DatomicElement implements TimeAwareElement {
             Keyword property = propertiesIt.next();
             // Add all properties (except the ident property (is only originally used for retrieving the id of the created elements)
             if (!property.toString().equals(":db/ident")) {
-                theFacts.add(DatomicUtil.map(":db/id", id, property.toString(), entity.get(property).toString()));
+                theFacts.add(FluxUtil.map(":db/id", id, property.toString(), entity.get(property).toString()));
             }
         }
         return theFacts;

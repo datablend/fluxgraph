@@ -7,14 +7,14 @@ import com.tinkerpop.blueprints.util.io.graphml.GraphMLReader;
 /**
  * @author Davy Suvee (http://datablend.be)
  */
-public class DatomicBenchmarkTestSuite extends TestSuite {
+public class FluxBenchmarkTestSuite extends TestSuite {
 
     private static final int TOTAL_RUNS = 10;
 
-    public DatomicBenchmarkTestSuite() {
+    public FluxBenchmarkTestSuite() {
     }
 
-    public DatomicBenchmarkTestSuite(final GraphTest graphTest) {
+    public FluxBenchmarkTestSuite(final GraphTest graphTest) {
         super(graphTest);
     }
 
@@ -56,9 +56,9 @@ public class DatomicBenchmarkTestSuite extends TestSuite {
             vv.close();
             double currentTime = this.stopWatch();
             totalTime = totalTime + currentTime;
-            BaseTest.printPerformance(graph.toString(), counter, "DatomicGraph elements touched (run=" + i + ")", currentTime);
+            BaseTest.printPerformance(graph.toString(), counter, "FluxGraph elements touched (run=" + i + ")", currentTime);
             graph.shutdown();
         }
-        BaseTest.printPerformance("DatomicGraph", 1, "DatomicGraph experiment average", totalTime / (double) TOTAL_RUNS);
+        BaseTest.printPerformance("FluxGraph", 1, "FluxGraph experiment average", totalTime / (double) TOTAL_RUNS);
     }
 }

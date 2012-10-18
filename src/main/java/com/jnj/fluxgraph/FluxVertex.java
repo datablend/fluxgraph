@@ -11,27 +11,27 @@ import java.util.*;
 /**
  * @author Davy Suvee (http://datablend.be)
  */
-public class DatomicVertex extends DatomicElement implements TimeAwareVertex {
+public class FluxVertex extends FluxElement implements TimeAwareVertex {
 
-    protected DatomicVertex(final DatomicGraph datomicGraph, final Database database) {
-        super(datomicGraph, database);
-        datomicGraph.addToTransaction(Util.map(":db/id", id,
+    protected FluxVertex(final FluxGraph fluxGraph, final Database database) {
+        super(fluxGraph, database);
+        fluxGraph.addToTransaction(Util.map(":db/id", id,
                                               ":graph.element/type", ":graph.element.type/vertex",
                                               ":db/ident", uuid));
     }
 
-    public DatomicVertex(final DatomicGraph datomicGraph, final Database database, final Object id) {
-        super(datomicGraph, database);
+    public FluxVertex(final FluxGraph fluxGraph, final Database database, final Object id) {
+        super(fluxGraph, database);
         this.id = id;
     }
 
     @Override
     public TimeAwareVertex getPreviousVersion() {
         // Retrieve the previous version time id
-        Object previousTimeId = DatomicUtil.getPreviousTransaction(datomicGraph, this);
+        Object previousTimeId = FluxUtil.getPreviousTransaction(fluxGraph, this);
         if (previousTimeId != null) {
             // Create a new version of the vertex timescoped to the previous time id
-            return new DatomicVertex(datomicGraph, datomicGraph.getRawGraph(previousTimeId), id);
+            return new FluxVertex(fluxGraph, fluxGraph.getRawGraph(previousTimeId), id);
         }
         return null;
     }
@@ -39,12 +39,12 @@ public class DatomicVertex extends DatomicElement implements TimeAwareVertex {
     @Override
     public TimeAwareVertex getNextVersion() {
         // Retrieve the next version time id
-        Object nextTimeId = DatomicUtil.getNextTransactionId(datomicGraph, this);
+        Object nextTimeId = FluxUtil.getNextTransactionId(fluxGraph, this);
         if (nextTimeId != null) {
-            DatomicVertex nextVertexVersion = new DatomicVertex(datomicGraph, datomicGraph.getRawGraph(nextTimeId), id);
+            FluxVertex nextVertexVersion = new FluxVertex(fluxGraph, fluxGraph.getRawGraph(nextTimeId), id);
             // If no next version exists, the version of the edge is the current version (timescope with a null database)
-            if (DatomicUtil.getNextTransactionId(datomicGraph, nextVertexVersion) == null) {
-                return new DatomicVertex(datomicGraph, null, id);
+            if (FluxUtil.getNextTransactionId(fluxGraph, nextVertexVersion) == null) {
+                return new FluxVertex(fluxGraph, null, id);
             }
             else {
                 return nextVertexVersion;
@@ -55,22 +55,22 @@ public class DatomicVertex extends DatomicElement implements TimeAwareVertex {
 
     @Override
     public Iterable<TimeAwareVertex> getNextVersions() {
-        return new DatomicTimeIterable(this, true);
+        return new FluxTimeIterable(this, true);
     }
 
     @Override
     public Iterable<TimeAwareVertex> getPreviousVersions() {
-        return new DatomicTimeIterable(this, false);
+        return new FluxTimeIterable(this, false);
     }
 
     @Override
     public Iterable<TimeAwareVertex> getPreviousVersions(TimeAwareFilter timeAwareFilter) {
-        return new DatomicTimeIterable(this, false, timeAwareFilter);
+        return new FluxTimeIterable(this, false, timeAwareFilter);
     }
 
     @Override
     public Iterable<TimeAwareVertex> getNextVersions(TimeAwareFilter timeAwareFilter) {
-        return new DatomicTimeIterable(this, true, timeAwareFilter);
+        return new FluxTimeIterable(this, true, timeAwareFilter);
     }
 
     @Override
@@ -92,14 +92,14 @@ public class DatomicVertex extends DatomicElement implements TimeAwareVertex {
             while (edgesit.hasNext()) {
                 vertices.add(edgesit.next().getVertex(Direction.IN).getId());
             }
-            return new DatomicIterable(vertices, datomicGraph, database, Vertex.class);
+            return new FluxIterable(vertices, fluxGraph, database, Vertex.class);
         } else if (direction.equals(Direction.IN)) {
             Iterator<Edge> edgesit = this.getInEdges(labels).iterator();
             List<Object> vertices = new ArrayList<Object>();
             while (edgesit.hasNext()) {
                 vertices.add(edgesit.next().getVertex(Direction.OUT).getId());
             }
-            return new DatomicIterable(vertices, datomicGraph, database, Vertex.class);
+            return new FluxIterable(vertices, fluxGraph, database, Vertex.class);
         }
         else {
             Iterator<Edge> outEdgesIt = this.getOutEdges(labels).iterator();
@@ -112,7 +112,7 @@ public class DatomicVertex extends DatomicElement implements TimeAwareVertex {
             while (inEdgesIt.hasNext()) {
                 invertices.add(inEdgesIt.next().getVertex(Direction.OUT).getId());
             }
-            return new MultiIterable<Vertex>(Arrays.<Iterable<Vertex>>asList(new DatomicIterable(outvertices, datomicGraph, database, Vertex.class), new DatomicIterable(invertices, datomicGraph, database, Vertex.class)));
+            return new MultiIterable<Vertex>(Arrays.<Iterable<Vertex>>asList(new FluxIterable(outvertices, fluxGraph, database, Vertex.class), new FluxIterable(invertices, fluxGraph, database, Vertex.class)));
         }
     }
 
@@ -135,14 +135,14 @@ public class DatomicVertex extends DatomicElement implements TimeAwareVertex {
         while (edgesIt.hasNext()) {
             Edge edge = edgesIt.next();
             // Add the fact that the edge entity is an edge
-            theFacts.add(DatomicUtil.map(":db/id", edge.getId(), ":graph.element/type", ":graph.element.type/edge"));
+            theFacts.add(FluxUtil.map(":db/id", edge.getId(), ":graph.element/type", ":graph.element.type/edge"));
             // Add the out and in vertex
-            theFacts.add(DatomicUtil.map(":db/id", edge.getVertex(Direction.IN).getId(), ":graph.element/type", ":graph.element.type/vertex"));
-            theFacts.add(DatomicUtil.map(":db/id", edge.getId(), ":graph.edge/inVertex", edge.getVertex(Direction.IN).getId()));
-            theFacts.add(DatomicUtil.map(":db/id", edge.getVertex(Direction.OUT).getId(), ":graph.element/type", ":graph.element.type/vertex"));
-            theFacts.add(DatomicUtil.map(":db/id", edge.getId(), ":graph.edge/outVertex", edge.getVertex(Direction.OUT).getId()));
+            theFacts.add(FluxUtil.map(":db/id", edge.getVertex(Direction.IN).getId(), ":graph.element/type", ":graph.element.type/vertex"));
+            theFacts.add(FluxUtil.map(":db/id", edge.getId(), ":graph.edge/inVertex", edge.getVertex(Direction.IN).getId()));
+            theFacts.add(FluxUtil.map(":db/id", edge.getVertex(Direction.OUT).getId(), ":graph.element/type", ":graph.element.type/vertex"));
+            theFacts.add(FluxUtil.map(":db/id", edge.getId(), ":graph.edge/outVertex", edge.getVertex(Direction.OUT).getId()));
             // Add the label
-            theFacts.add(DatomicUtil.map(":db/id", edge.getId(), ":graph.edge/label", edge.getLabel()));
+            theFacts.add(FluxUtil.map(":db/id", edge.getId(), ":graph.edge/label", edge.getLabel()));
         }
         return theFacts;
     }
@@ -155,12 +155,12 @@ public class DatomicVertex extends DatomicElement implements TimeAwareVertex {
                                                    ":in $ ?vertex [?label ...] " +
                                                    ":where [?edge :graph.edge/inVertex ?vertex] " +
                                                           "[?edge :graph.edge/label ?label ] ]", getDatabase(), id, labels);
-        return new DatomicIterable(inEdges, datomicGraph, database, Edge.class);
+        return new FluxIterable(inEdges, fluxGraph, database, Edge.class);
     }
 
     private Iterable<Edge> getInEdges() {
-        Iterable<Datom> inEdges = getDatabase().datoms(Database.AVET, datomicGraph.GRAPH_EDGE_IN_VERTEX, getId());
-        return new DatomicIterable(inEdges, datomicGraph, database, Edge.class);
+        Iterable<Datom> inEdges = getDatabase().datoms(Database.AVET, fluxGraph.GRAPH_EDGE_IN_VERTEX, getId());
+        return new FluxIterable(inEdges, fluxGraph, database, Edge.class);
     }
 
     private Iterable<Edge> getOutEdges(final String... labels) {
@@ -171,12 +171,12 @@ public class DatomicVertex extends DatomicElement implements TimeAwareVertex {
                                                     ":in $ ?vertex [?label ...] " +
                                                     ":where [?edge :graph.edge/outVertex ?vertex] " +
                                                            "[?edge :graph.edge/label ?label ] ]", getDatabase(), id, labels);
-        return new DatomicIterable(outEdges, datomicGraph, database, Edge.class);
+        return new FluxIterable(outEdges, fluxGraph, database, Edge.class);
     }
 
     private Iterable<Edge> getOutEdges() {
-        Iterable<Datom> outEdges = getDatabase().datoms(Database.AVET, datomicGraph.GRAPH_EDGE_OUT_VERTEX, getId());
-        return new DatomicIterable(outEdges, datomicGraph, database, Edge.class);
+        Iterable<Datom> outEdges = getDatabase().datoms(Database.AVET, fluxGraph.GRAPH_EDGE_OUT_VERTEX, getId());
+        return new FluxIterable(outEdges, fluxGraph, database, Edge.class);
     }
 
 }

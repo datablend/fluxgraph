@@ -11,27 +11,27 @@ import java.util.Set;
 /**
  * @author Davy Suvee (http://datablend.be)
  */
-public class DatomicEdge extends DatomicElement implements TimeAwareEdge {
+public class FluxEdge extends FluxElement implements TimeAwareEdge {
 
-    public DatomicEdge(final DatomicGraph datomicGraph, final Database database) {
-        super(datomicGraph, database);
-        datomicGraph.addToTransaction(Util.map(":db/id", id,
+    public FluxEdge(final FluxGraph fluxGraph, final Database database) {
+        super(fluxGraph, database);
+        fluxGraph.addToTransaction(Util.map(":db/id", id,
                                                ":graph.element/type", ":graph.element.type/edge",
                                                ":db/ident", uuid));
     }
 
-    public DatomicEdge(final DatomicGraph datomicGraph, final Database database, final Object id) {
-        super(datomicGraph, database);
+    public FluxEdge(final FluxGraph fluxGraph, final Database database, final Object id) {
+        super(fluxGraph, database);
         this.id = id;
     }
 
     @Override
     public TimeAwareEdge getPreviousVersion() {
         // Retrieve the previous version time id
-        Object previousTimeId = DatomicUtil.getPreviousTransaction(datomicGraph, this);
+        Object previousTimeId = FluxUtil.getPreviousTransaction(fluxGraph, this);
         if (previousTimeId != null) {
             // Create a new version of the edge timescoped to the previous time id
-            return new DatomicEdge(datomicGraph, datomicGraph.getRawGraph(previousTimeId), id);
+            return new FluxEdge(fluxGraph, fluxGraph.getRawGraph(previousTimeId), id);
         }
         return null;
     }
@@ -39,13 +39,13 @@ public class DatomicEdge extends DatomicElement implements TimeAwareEdge {
     @Override
     public TimeAwareEdge getNextVersion() {
         // Retrieve the next version time id
-        Object nextTimeId = DatomicUtil.getNextTransactionId(datomicGraph, this);
+        Object nextTimeId = FluxUtil.getNextTransactionId(fluxGraph, this);
         if (nextTimeId != null) {
             // Create a new version of the edge timescoped to the next time id
-            DatomicEdge nextVertexVersion = new DatomicEdge(datomicGraph, datomicGraph.getRawGraph(nextTimeId), id);
+            FluxEdge nextVertexVersion = new FluxEdge(fluxGraph, fluxGraph.getRawGraph(nextTimeId), id);
             // If no next version exists, the version of the edge is the current version (timescope with a null database)
-            if (DatomicUtil.getNextTransactionId(datomicGraph, nextVertexVersion) == null) {
-                return new DatomicEdge(datomicGraph, null, id);
+            if (FluxUtil.getNextTransactionId(fluxGraph, nextVertexVersion) == null) {
+                return new FluxEdge(fluxGraph, null, id);
             }
             else {
                 return nextVertexVersion;
@@ -56,37 +56,37 @@ public class DatomicEdge extends DatomicElement implements TimeAwareEdge {
 
     @Override
     public Iterable<TimeAwareEdge> getNextVersions() {
-        return new DatomicTimeIterable(this, true);
+        return new FluxTimeIterable(this, true);
     }
 
     @Override
     public Iterable<TimeAwareEdge> getPreviousVersions() {
-        return new DatomicTimeIterable(this, false);
+        return new FluxTimeIterable(this, false);
     }
 
     @Override
     public Iterable<TimeAwareEdge> getPreviousVersions(TimeAwareFilter timeAwareFilter) {
-        return new DatomicTimeIterable(this, false, timeAwareFilter);
+        return new FluxTimeIterable(this, false, timeAwareFilter);
     }
 
     @Override
     public Iterable<TimeAwareEdge> getNextVersions(TimeAwareFilter timeAwareFilter) {
-        return new DatomicTimeIterable(this, true, timeAwareFilter);
+        return new FluxTimeIterable(this, true, timeAwareFilter);
     }
 
     @Override
     public TimeAwareVertex getVertex(Direction direction) throws IllegalArgumentException {
         if (direction.equals(Direction.OUT))
-            return new DatomicVertex(datomicGraph, database, getDatabase().datoms(Database.EAVT, getId(), datomicGraph.GRAPH_EDGE_OUT_VERTEX).iterator().next().v());
+            return new FluxVertex(fluxGraph, database, getDatabase().datoms(Database.EAVT, getId(), fluxGraph.GRAPH_EDGE_OUT_VERTEX).iterator().next().v());
         else if (direction.equals(Direction.IN))
-            return new DatomicVertex(datomicGraph, database, getDatabase().datoms(Database.EAVT, getId(), datomicGraph.GRAPH_EDGE_IN_VERTEX).iterator().next().v());
+            return new FluxVertex(fluxGraph, database, getDatabase().datoms(Database.EAVT, getId(), fluxGraph.GRAPH_EDGE_IN_VERTEX).iterator().next().v());
         else
             throw ExceptionFactory.bothIsNotSupported();
     }
 
     @Override
     public String getLabel() {
-        return (String)getDatabase().datoms(Database.EAVT, getId(), datomicGraph.GRAPH_EDGE_LABEL).iterator().next().v();
+        return (String)getDatabase().datoms(Database.EAVT, getId(), fluxGraph.GRAPH_EDGE_LABEL).iterator().next().v();
     }
 
     @Override
@@ -99,8 +99,8 @@ public class DatomicEdge extends DatomicElement implements TimeAwareEdge {
         // Retrieve the facts of the edge itself
         Set<Object> theFacts = super.getFacts();
         // Add the out and in vertex itself
-        theFacts.add(DatomicUtil.map(":db/id", getVertex(Direction.IN).getId(), ":graph.element/type", ":graph.element.type/vertex"));
-        theFacts.add(DatomicUtil.map(":db/id", getVertex(Direction.OUT).getId(), ":graph.element/type", ":graph.element.type/vertex"));
+        theFacts.add(FluxUtil.map(":db/id", getVertex(Direction.IN).getId(), ":graph.element/type", ":graph.element.type/vertex"));
+        theFacts.add(FluxUtil.map(":db/id", getVertex(Direction.OUT).getId(), ":graph.element/type", ":graph.element.type/vertex"));
         return theFacts;
     }
 

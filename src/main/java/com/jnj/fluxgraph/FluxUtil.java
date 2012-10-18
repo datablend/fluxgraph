@@ -12,7 +12,7 @@ import java.util.concurrent.ExecutionException;
 /**
  * @author Davy Suvee (http://datablend.be)
  */
-public class DatomicUtil {
+public class FluxUtil {
 
     private static final Map<String,String> types;
     private static final String RESERVED = ":graph";
@@ -55,7 +55,7 @@ public class DatomicUtil {
     }
 
     // Create the attribute definition if it does not exist yet
-    public static void createAttributeDefinition(final String key, final Class valueClazz, final Class elementClazz, DatomicGraph graph) {
+    public static void createAttributeDefinition(final String key, final Class valueClazz, final Class elementClazz, FluxGraph graph) {
         if (!existingAttributeDefinition(key, valueClazz, elementClazz, graph)) {
             try {
                 if (graph.getTransactionTime() == null) {
@@ -73,15 +73,15 @@ public class DatomicUtil {
                                                                       ":db.install/_attribute", ":db.part/db"), datomic.Util.map(":db/id", datomic.Peer.tempid(":db.part/tx"), ":db/txInstant", graph.getTransactionTime()))).get();
                 }
             } catch (InterruptedException e) {
-                throw new RuntimeException(DatomicGraph.DATOMIC_ERROR_EXCEPTION_MESSAGE);
+                throw new RuntimeException(FluxGraph.DATOMIC_ERROR_EXCEPTION_MESSAGE);
             } catch (ExecutionException e) {
-                throw new RuntimeException(DatomicGraph.DATOMIC_ERROR_EXCEPTION_MESSAGE);
+                throw new RuntimeException(FluxGraph.DATOMIC_ERROR_EXCEPTION_MESSAGE);
             }
         }
     }
 
     // Sets/Unsets an index for a particular attribute
-    public static void setAttributeIndex(final String key, final Class elementClazz, DatomicGraph graph, boolean index) {
+    public static void setAttributeIndex(final String key, final Class elementClazz, FluxGraph graph, boolean index) {
         // For a specific key, multiple attributes could be specified in Datomic that have a different type. We need to create an index for all of them
         for (String type : types.keySet()) {
             try {
@@ -94,27 +94,27 @@ public class DatomicUtil {
                 graph.getConnection().transact(Util.list(Util.map(":db/id", attribute,
                                                                   ":db/index", index))).get();
             } catch(ClassNotFoundException e) {
-                throw new RuntimeException(DatomicGraph.DATOMIC_ERROR_EXCEPTION_MESSAGE);
+                throw new RuntimeException(FluxGraph.DATOMIC_ERROR_EXCEPTION_MESSAGE);
             } catch (InterruptedException e) {
-                throw new RuntimeException(DatomicGraph.DATOMIC_ERROR_EXCEPTION_MESSAGE);
+                throw new RuntimeException(FluxGraph.DATOMIC_ERROR_EXCEPTION_MESSAGE);
             } catch (ExecutionException e) {
-                throw new RuntimeException(DatomicGraph.DATOMIC_ERROR_EXCEPTION_MESSAGE);
+                throw new RuntimeException(FluxGraph.DATOMIC_ERROR_EXCEPTION_MESSAGE);
             }
         }
     }
 
     // Creates an index for a particular attribute
-    public static void createAttributeIndex(final String key, final Class elementClazz, DatomicGraph graph) {
+    public static void createAttributeIndex(final String key, final Class elementClazz, FluxGraph graph) {
         setAttributeIndex(key, elementClazz, graph, true);
     }
 
     // Creates an index for a particular attribute
-    public static void removeAttributeIndex(final String key, final Class elementClazz, final DatomicGraph graph)  {
+    public static void removeAttributeIndex(final String key, final Class elementClazz, final FluxGraph graph)  {
         setAttributeIndex(key, elementClazz, graph, false);
     }
 
     // Checks whether a new attribute defintion needs to be created on the fly
-    public static boolean existingAttributeDefinition(final String key, final Class valueClazz, final Class elementClazz, final DatomicGraph graph) {
+    public static boolean existingAttributeDefinition(final String key, final Class valueClazz, final Class elementClazz, final FluxGraph graph) {
         int attributekeysize = Peer.q("[:find ?attribute " +
                                        ":in $ ?key " +
                                        ":where [?attribute :db/ident ?key] ]", graph.getRawGraph(), createKey(key, valueClazz, elementClazz)).size();
@@ -123,7 +123,7 @@ public class DatomicUtil {
     }
 
     // Retrieve the attribute definition (if it exists). Otherwise, it returns null
-    public static Object getAttributeDefinition(final String key, final Class valueClazz, final Class elementClazz, final DatomicGraph graph) {
+    public static Object getAttributeDefinition(final String key, final Class valueClazz, final Class elementClazz, final FluxGraph graph) {
         if (existingAttributeDefinition(key, valueClazz, elementClazz, graph)) {
             Collection<List<Object>> attributekeysize = Peer.q("[:find ?attribute " +
                                                                 ":in $ ?key " +
@@ -133,7 +133,7 @@ public class DatomicUtil {
         return null;
     }
 
-    public static Set<String> getIndexedAttributes(final Class elementClazz, final DatomicGraph graph) {
+    public static Set<String> getIndexedAttributes(final Class elementClazz, final FluxGraph graph) {
         Set<String> results = new HashSet<String>();
         Collection<List<Object>> indexedAttributes = Peer.q("[:find ?key " +
                                                              ":in $ " +
@@ -149,7 +149,7 @@ public class DatomicUtil {
     }
 
     // Checks whether a new attribute defintion needs to be created on the fly
-    public static boolean existingAttributeDefinition(final Keyword key, final DatomicGraph graph) {
+    public static boolean existingAttributeDefinition(final Keyword key, final FluxGraph graph) {
         int attributekeysize = Peer.q("[:find ?attribute " +
                                        ":in $ ?key " +
                                        ":where [?attribute :db/ident ?key] ]", graph.getRawGraph(), key).size();
@@ -160,14 +160,14 @@ public class DatomicUtil {
     // Creates a unique key for each key-valuetype attribute (as only one attribute with the same name can be specified)
     public static Keyword createKey(final String key, final Class valueClazz, final Class elementClazz) {
         String elementType = "vertex";
-        if (elementClazz.isAssignableFrom(DatomicEdge.class)) {
+        if (elementClazz.isAssignableFrom(FluxEdge.class)) {
             elementType = "edge";
         }
         return Keyword.intern(key.replace("_","$") + "." + mapJavaTypeToDatomicType(valueClazz).split("/")[1] + "." + elementType);
     }
 
     // Returns the previous transaction for a particular time aware element
-    public static Object getPreviousTransaction(DatomicGraph graph, TimeAwareElement element) {
+    public static Object getPreviousTransaction(FluxGraph graph, TimeAwareElement element) {
         Iterator<List<Object>> previoustransaction  = (Peer.q("[:find ?previousTransactionId " +
                                                                ":in $ ?currentTransactionId ?id " +
                                                                ":where [?currentTransactionId :graph.element/previousTransaction ?previousTransaction] " +
@@ -180,7 +180,7 @@ public class DatomicUtil {
     }
 
     // Returns the next transaction for a particular time aware element (null if the transaction id does not exist)
-    public static Object getNextTransactionId(DatomicGraph graph, TimeAwareElement element) {
+    public static Object getNextTransactionId(FluxGraph graph, TimeAwareElement element) {
         // Retrieve the last encountered transaction before the input transaction
         Iterator<List<Object>> nexttransaction = (Peer.q("[:find ?nextTransactionId " +
                                                           ":in $ ?currenttransactionId ?id " +
@@ -217,13 +217,13 @@ public class DatomicUtil {
     }
 
     // Helper method to retrieve the date associated with a particular transaction id
-    public static Date getTransactionDate(DatomicGraph graph, Object transaction) {
+    public static Date getTransactionDate(FluxGraph graph, Object transaction) {
         return (Date)datomic.Peer.q("[:find ?time " +
                                      ":in $ ?tx " +
                                      ":where [?tx :db/txInstant ?time] ]", graph.getRawGraph(), transaction).iterator().next().get(0);
     }
 
-    public static Object getIdForAttribute(DatomicGraph graph, String attribute) {
+    public static Object getIdForAttribute(FluxGraph graph, String attribute) {
         return Peer.q("[:find ?entity " +
                        ":in $ ?attribute " +
                        ":where [?entity :db/ident ?attribute] ] ", graph.getRawGraph(), Keyword.intern(attribute)).iterator().next().get(0);

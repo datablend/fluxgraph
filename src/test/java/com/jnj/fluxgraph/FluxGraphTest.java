@@ -14,14 +14,14 @@ import java.util.UUID;
  *
  * @author Davy Suvee (http://datablend.be)
  */
-public class DatomicGraphTest extends GraphTest {
+public class FluxGraphTest extends GraphTest {
 
-    private DatomicGraph currentGraph;
+    private FluxGraph currentGraph;
 
     /*public void testDatomicBenchmarkTestSuite() throws Exception {
         this.stopWatch();
-        doTestSuite(new DatomicBenchmarkTestSuite(this));
-        printTestPerformance("DatomicBenchmarkTestSuite", this.stopWatch());
+        doTestSuite(new FluxBenchmarkTestSuite(this));
+        printTestPerformance("FluxBenchmarkTestSuite", this.stopWatch());
     }*/
 
     public void testVertexTestSuite() throws Exception {
@@ -73,7 +73,7 @@ public class DatomicGraphTest extends GraphTest {
     }
 
     public Graph generateGraph() {
-        this.currentGraph = new DatomicGraph("datomic:mem://tinkerpop" + UUID.randomUUID());
+        this.currentGraph = new FluxGraph("datomic:mem://tinkerpop" + UUID.randomUUID());
         return this.currentGraph;
     }
 

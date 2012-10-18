@@ -7,18 +7,18 @@ import java.util.Iterator;
 /**
  * @author Davy Suvee (http://datablend.be)
  */
-public class DatomicTimeIterable implements CloseableIterable {
+public class FluxTimeIterable implements CloseableIterable {
 
     private TimeAwareElement timeAwareElement;
     private boolean forward;
     private TimeAwareFilter timeAwareFilter;
 
-    public DatomicTimeIterable(TimeAwareElement timeAwareElement, boolean forward) {
+    public FluxTimeIterable(TimeAwareElement timeAwareElement, boolean forward) {
         this.timeAwareElement = timeAwareElement;
         this.forward = forward;
     }
 
-    public DatomicTimeIterable(TimeAwareElement timeAwareElement, boolean forward, TimeAwareFilter timeAwareFilter) {
+    public FluxTimeIterable(TimeAwareElement timeAwareElement, boolean forward, TimeAwareFilter timeAwareFilter) {
         this.timeAwareElement = timeAwareElement;
         this.forward = forward;
         this.timeAwareFilter = timeAwareFilter;
@@ -40,8 +40,8 @@ public class DatomicTimeIterable implements CloseableIterable {
 
     private class BackwardTimeIterator extends TimeIterator {
         @Override
-        protected DatomicElement getNext(TimeAwareElement element) {
-            DatomicElement found = (DatomicElement)element.getPreviousVersion();
+        protected FluxElement getNext(TimeAwareElement element) {
+            FluxElement found = (FluxElement)element.getPreviousVersion();
             if (found != null && timeAwareFilter != null) {
                 if (timeAwareFilter.filter(found) != null) {
                     return found;
@@ -56,8 +56,8 @@ public class DatomicTimeIterable implements CloseableIterable {
 
     private class ForwardTimeIterator extends TimeIterator {
         @Override
-        protected DatomicElement getNext(TimeAwareElement element) {
-            DatomicElement found = (DatomicElement)element.getNextVersion();
+        protected FluxElement getNext(TimeAwareElement element) {
+            FluxElement found = (FluxElement)element.getNextVersion();
             if (found != null && timeAwareFilter != null) {
                 if (timeAwareFilter.filter(found) != null) {
                     return found;
@@ -78,7 +78,7 @@ public class DatomicTimeIterable implements CloseableIterable {
             return hasNext(getNext(timeAwareElement));
         }
 
-        protected abstract DatomicElement getNext(TimeAwareElement element);
+        protected abstract FluxElement getNext(TimeAwareElement element);
 
         @Override
         public TimeAwareElement next() {
@@ -92,7 +92,7 @@ public class DatomicTimeIterable implements CloseableIterable {
             }
         }
 
-        private boolean hasNext(DatomicElement element) {
+        private boolean hasNext(FluxElement element) {
             // We do have a next version
             return element != null;
         }

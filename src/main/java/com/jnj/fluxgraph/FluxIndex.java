@@ -14,22 +14,22 @@ import java.util.Set;
  * @author Davy Suvee (http://datablend.be)
  * Helper class to retrieve elements. If an Datomic index exists for a particular attribute, it will be used under the covers.
  */
-public class DatomicIndex<T extends Element> implements Index<T> {
+public class FluxIndex<T extends Element> implements Index<T> {
 
-    private DatomicGraph graph = null;
+    private FluxGraph graph = null;
     private Class<T> clazz = null;
     private String name = null;
     private Set<String> indexKeys = null;
     private Database database;
 
-    public DatomicIndex(final String name, final DatomicGraph g, final Database database, final Class<T> clazz) {
+    public FluxIndex(final String name, final FluxGraph g, final Database database, final Class<T> clazz) {
         this.name = name;
         this.graph = g;
         this.clazz = clazz;
         this.database = database;
     }
 
-    public DatomicIndex(final String name, final DatomicGraph g, final Database database, final Class<T> clazz, Set<String> indexKeys) {
+    public FluxIndex(final String name, final FluxGraph g, final Database database, final Class<T> clazz, Set<String> indexKeys) {
         this.name = name;
         this.graph = g;
         this.clazz = clazz;
@@ -60,29 +60,29 @@ public class DatomicIndex<T extends Element> implements Index<T> {
     public CloseableIterable<T> get(final String key, final Object value) {
         boolean matched = ((indexKeys == null) || ((indexKeys != null) && indexKeys.contains(key)));
         Keyword attribute = null;
-        if ((this.getIndexClass().isAssignableFrom(DatomicEdge.class)) && ("label".equals(key))) {
+        if ((this.getIndexClass().isAssignableFrom(FluxEdge.class)) && ("label".equals(key))) {
             attribute = Keyword.intern("graph.edge/label");
         }
         else {
-            attribute = DatomicUtil.createKey(key, value.getClass(), clazz);
+            attribute = FluxUtil.createKey(key, value.getClass(), clazz);
         }
-        if (matched && DatomicUtil.existingAttributeDefinition(attribute, graph)) {
-            if (this.getIndexClass().isAssignableFrom(DatomicVertex.class)) {
-                return new DatomicIterable(getElements(attribute, value, Keyword.intern("graph.element.type/vertex"), getDatabase()), graph, database, Vertex.class);
+        if (matched && FluxUtil.existingAttributeDefinition(attribute, graph)) {
+            if (this.getIndexClass().isAssignableFrom(FluxVertex.class)) {
+                return new FluxIterable(getElements(attribute, value, Keyword.intern("graph.element.type/vertex"), getDatabase()), graph, database, Vertex.class);
             }
-            if (this.getIndexClass().isAssignableFrom(DatomicEdge.class)) {
-                return new DatomicIterable(getElements(attribute, value, Keyword.intern("graph.element.type/edge"), getDatabase()), graph, database, Edge.class);
+            if (this.getIndexClass().isAssignableFrom(FluxEdge.class)) {
+                return new FluxIterable(getElements(attribute, value, Keyword.intern("graph.element.type/edge"), getDatabase()), graph, database, Edge.class);
             }
-            throw new RuntimeException(DatomicGraph.DATOMIC_ERROR_EXCEPTION_MESSAGE);
+            throw new RuntimeException(FluxGraph.DATOMIC_ERROR_EXCEPTION_MESSAGE);
         }
         else {
-            if (this.getIndexClass().isAssignableFrom(DatomicVertex.class)) {
-                return new DatomicIterable(new ArrayList<List<Object>>(), graph, database, Vertex.class);
+            if (this.getIndexClass().isAssignableFrom(FluxVertex.class)) {
+                return new FluxIterable(new ArrayList<List<Object>>(), graph, database, Vertex.class);
             }
-            if (this.getIndexClass().isAssignableFrom(DatomicEdge.class)) {
-                return new DatomicIterable(new ArrayList<List<Object>>(), graph, database, Edge.class);
+            if (this.getIndexClass().isAssignableFrom(FluxEdge.class)) {
+                return new FluxIterable(new ArrayList<List<Object>>(), graph, database, Edge.class);
             }
-            throw new RuntimeException(DatomicGraph.DATOMIC_ERROR_EXCEPTION_MESSAGE);
+            throw new RuntimeException(FluxGraph.DATOMIC_ERROR_EXCEPTION_MESSAGE);
         }
     }
 
@@ -94,20 +94,20 @@ public class DatomicIndex<T extends Element> implements Index<T> {
     public long count(final String key, final Object value) {
         boolean matched = ((indexKeys == null) || ((indexKeys != null) && indexKeys.contains(key)));
         Keyword attribute = null;
-        if ((this.getIndexClass().isAssignableFrom(DatomicEdge.class)) && ("label".equals(key))) {
+        if ((this.getIndexClass().isAssignableFrom(FluxEdge.class)) && ("label".equals(key))) {
             attribute = Keyword.intern("graph.edge/label");
         }
         else {
-            attribute = DatomicUtil.createKey(key, value.getClass(), clazz);
+            attribute = FluxUtil.createKey(key, value.getClass(), clazz);
         }
-        if (matched && DatomicUtil.existingAttributeDefinition(attribute, graph)) {
-            if (this.getIndexClass().isAssignableFrom(DatomicVertex.class)) {
+        if (matched && FluxUtil.existingAttributeDefinition(attribute, graph)) {
+            if (this.getIndexClass().isAssignableFrom(FluxVertex.class)) {
                 return getElements(attribute, value, Keyword.intern("graph.element.type/vertex"), getDatabase()).size();
             }
-            if (this.getIndexClass().isAssignableFrom(DatomicEdge.class)) {
+            if (this.getIndexClass().isAssignableFrom(FluxEdge.class)) {
                 return getElements(attribute, value, Keyword.intern("graph.element.type/edge"), getDatabase()).size();
             }
-            throw new RuntimeException(DatomicGraph.DATOMIC_ERROR_EXCEPTION_MESSAGE);
+            throw new RuntimeException(FluxGraph.DATOMIC_ERROR_EXCEPTION_MESSAGE);
         }
         else {
             return 0;

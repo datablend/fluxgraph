@@ -1,6 +1,5 @@
 package com.jnj.fluxgraph;
 
-import clojure.lang.Keyword;
 import com.tinkerpop.blueprints.*;
 import com.tinkerpop.blueprints.util.ExceptionFactory;
 import com.tinkerpop.blueprints.util.StringFactory;
@@ -14,7 +13,7 @@ import java.util.concurrent.ExecutionException;
  *
  * @author Davy Suvee (http://datablend.be)
  */
-public class DatomicGraph implements MetaGraph<Database>, KeyIndexableGraph, TimeAwareGraph {
+public class FluxGraph implements MetaGraph<Database>, KeyIndexableGraph, TimeAwareGraph {
 
     private final String graphURI;
     private final Connection connection;
@@ -27,8 +26,8 @@ public class DatomicGraph implements MetaGraph<Database>, KeyIndexableGraph, Tim
     public final Object GRAPH_EDGE_OUT_VERTEX;
     public final Object GRAPH_EDGE_LABEL;
 
-    private final DatomicIndex vertexIndex;
-    private final DatomicIndex edgeIndex;
+    private final FluxIndex vertexIndex;
+    private final FluxIndex edgeIndex;
 
     protected final ThreadLocal<List> tx = new ThreadLocal<List>() {
         protected List initialValue() {
@@ -83,7 +82,7 @@ public class DatomicGraph implements MetaGraph<Database>, KeyIndexableGraph, Tim
         FEATURES.supportsThreadedTransactions = false;
     }
 
-    public DatomicGraph(final String graphURI) {
+    public FluxGraph(final String graphURI) {
         this.graphURI = graphURI;
         Peer.createDatabase(graphURI);
         // Retrieve the connection
@@ -95,20 +94,20 @@ public class DatomicGraph implements MetaGraph<Database>, KeyIndexableGraph, Tim
                 setupMetaModel();
             }
             // Retrieve the relevant ids for the properties (for raw index access later on)
-            GRAPH_ELEMENT_TYPE = DatomicUtil.getIdForAttribute(this,"graph.element/type");
-            GRAPH_ELEMENT_TYPE_VERTEX = DatomicUtil.getIdForAttribute(this,"graph.element.type/vertex");
-            GRAPH_ELEMENT_TYPE_EDGE = DatomicUtil.getIdForAttribute(this,"graph.element.type/edge");
-            GRAPH_EDGE_IN_VERTEX = DatomicUtil.getIdForAttribute(this,"graph.edge/inVertex");
-            GRAPH_EDGE_OUT_VERTEX = DatomicUtil.getIdForAttribute(this,"graph.edge/outVertex");
-            GRAPH_EDGE_LABEL = DatomicUtil.getIdForAttribute(this,"graph.edge/label");
+            GRAPH_ELEMENT_TYPE = FluxUtil.getIdForAttribute(this, "graph.element/type");
+            GRAPH_ELEMENT_TYPE_VERTEX = FluxUtil.getIdForAttribute(this, "graph.element.type/vertex");
+            GRAPH_ELEMENT_TYPE_EDGE = FluxUtil.getIdForAttribute(this, "graph.element.type/edge");
+            GRAPH_EDGE_IN_VERTEX = FluxUtil.getIdForAttribute(this, "graph.edge/inVertex");
+            GRAPH_EDGE_OUT_VERTEX = FluxUtil.getIdForAttribute(this, "graph.edge/outVertex");
+            GRAPH_EDGE_LABEL = FluxUtil.getIdForAttribute(this, "graph.edge/label");
         } catch (ExecutionException e) {
-            throw new RuntimeException(DatomicGraph.DATOMIC_ERROR_EXCEPTION_MESSAGE);
+            throw new RuntimeException(FluxGraph.DATOMIC_ERROR_EXCEPTION_MESSAGE);
         } catch (InterruptedException e) {
-            throw new RuntimeException(DatomicGraph.DATOMIC_ERROR_EXCEPTION_MESSAGE);
+            throw new RuntimeException(FluxGraph.DATOMIC_ERROR_EXCEPTION_MESSAGE);
         }
         // Create the required indexes
-        this.vertexIndex = new DatomicIndex("vertexIndex", this, null, Vertex.class);
-        this.edgeIndex = new DatomicIndex("edgeIndex", this, null, Edge.class);
+        this.vertexIndex = new FluxIndex("vertexIndex", this, null, Vertex.class);
+        this.edgeIndex = new FluxIndex("edgeIndex", this, null, Edge.class);
     }
 
     @Override
@@ -126,7 +125,7 @@ public class DatomicGraph implements MetaGraph<Database>, KeyIndexableGraph, Tim
         if (null == id)
             throw ExceptionFactory.edgeIdCanNotBeNull();
         try {
-            return new DatomicEdge(this, this.getRawGraph(), Long.valueOf(id.toString()).longValue());
+            return new FluxEdge(this, this.getRawGraph(), Long.valueOf(id.toString()).longValue());
         } catch (NumberFormatException e) {
             return null;
         } catch (RuntimeException re) {
@@ -137,7 +136,7 @@ public class DatomicGraph implements MetaGraph<Database>, KeyIndexableGraph, Tim
     @Override
     public Iterable<Edge> getEdges() {
         Iterable<Datom> edges = this.getRawGraph().datoms(Database.AVET, GRAPH_ELEMENT_TYPE, GRAPH_ELEMENT_TYPE_EDGE);
-        return new DatomicIterable<Edge>(edges, this, this.getRawGraph(), Edge.class);
+        return new FluxIterable<Edge>(edges, this, this.getRawGraph(), Edge.class);
     }
 
     @Override
@@ -148,7 +147,7 @@ public class DatomicGraph implements MetaGraph<Database>, KeyIndexableGraph, Tim
     @Override
     public TimeAwareEdge addEdge(final Object id, final Vertex outVertex, final Vertex inVertex, final String label) {
         // Create the new edge
-        final DatomicEdge edge = new DatomicEdge(this, null);
+        final FluxEdge edge = new FluxEdge(this, null);
         tx.get().add(Util.map(":db/id", edge.id,
                               ":graph.edge/label", label,
                               ":graph.edge/inVertex", inVertex.getId(),
@@ -173,7 +172,7 @@ public class DatomicGraph implements MetaGraph<Database>, KeyIndexableGraph, Tim
     @Override
     public TimeAwareVertex addVertex(final Object id) {
         // Create the new vertex
-        DatomicVertex vertex = new DatomicVertex(this, null);
+        FluxVertex vertex = new FluxVertex(this, null);
 
         // Transact
         transact();
@@ -190,7 +189,7 @@ public class DatomicGraph implements MetaGraph<Database>, KeyIndexableGraph, Tim
             throw ExceptionFactory.vertexIdCanNotBeNull();
         try {
             final Long longId = Long.valueOf(id.toString()).longValue();
-            return new DatomicVertex(this, this.getRawGraph(), longId);
+            return new FluxVertex(this, this.getRawGraph(), longId);
         } catch (NumberFormatException e) {
             return null;
         } catch (RuntimeException re) {
@@ -201,7 +200,7 @@ public class DatomicGraph implements MetaGraph<Database>, KeyIndexableGraph, Tim
     @Override
     public Iterable<Vertex> getVertices() {
         Iterable<Datom> vertices = this.getRawGraph().datoms(Database.AVET, this.GRAPH_ELEMENT_TYPE, this.GRAPH_ELEMENT_TYPE_VERTEX);
-        return new DatomicIterable<Vertex>(vertices, this, this.getRawGraph(), Vertex.class);
+        return new FluxIterable<Vertex>(vertices, this, this.getRawGraph(), Vertex.class);
     }
 
     @Override
@@ -255,29 +254,29 @@ public class DatomicGraph implements MetaGraph<Database>, KeyIndexableGraph, Tim
         // Set graph at checkpoint date1
         setCheckpointTime(date1);
         for (Object vertex : workingSet.getVertices()) {
-            factsAtDate1.addAll(((DatomicVertex)getVertex(vertex)).getFacts());
+            factsAtDate1.addAll(((FluxVertex)getVertex(vertex)).getFacts());
         }
         for (Object edge : workingSet.getEdges()) {
-            factsAtDate1.addAll(((DatomicEdge)getEdge(edge)).getFacts());
+            factsAtDate1.addAll(((FluxEdge)getEdge(edge)).getFacts());
         }
         // Set graph at checkpoint date2
         setCheckpointTime(date2);
         for (Object vertex : workingSet.getVertices()) {
-            factsAtDate2.addAll(((DatomicVertex)getVertex(vertex)).getFacts());
+            factsAtDate2.addAll(((FluxVertex)getVertex(vertex)).getFacts());
         }
         for (Object edge : workingSet.getEdges()) {
-            factsAtDate2.addAll(((DatomicEdge)getEdge(edge)).getFacts());
+            factsAtDate2.addAll(((FluxEdge)getEdge(edge)).getFacts());
         }
         // Calculate the difference between the facts of both time aware elements
-        Set<Object> difference = DatomicUtil.difference(factsAtDate1, factsAtDate2);
-        return new ImmutableDatomicGraph("datomic:mem://temp" + UUID.randomUUID(), this, difference);
+        Set<Object> difference = FluxUtil.difference(factsAtDate1, factsAtDate2);
+        return new ImmutableFluxGraph("datomic:mem://temp" + UUID.randomUUID(), this, difference);
     }
 
     @Override
     public Graph difference(TimeAwareElement element1, TimeAwareElement element2) {
         // Calculate the difference between the facts of both time aware elements
-        Set<Object> difference = DatomicUtil.difference(((DatomicElement)element1).getFacts(), ((DatomicElement)element2).getFacts());
-        return new ImmutableDatomicGraph("datomic:mem://temp" + UUID.randomUUID(), this, difference);
+        Set<Object> difference = FluxUtil.difference(((FluxElement) element1).getFacts(), ((FluxElement) element2).getFacts());
+        return new ImmutableFluxGraph("datomic:mem://temp" + UUID.randomUUID(), this, difference);
     }
 
     @Override
@@ -287,17 +286,17 @@ public class DatomicGraph implements MetaGraph<Database>, KeyIndexableGraph, Tim
 
     @Override
     public <T extends Element> void dropKeyIndex(String key, Class<T> elementClass) {
-        DatomicUtil.removeAttributeIndex(key, elementClass, this);
+        FluxUtil.removeAttributeIndex(key, elementClass, this);
     }
 
     @Override
     public <T extends Element> void createKeyIndex(String key, Class<T> elementClass) {
-        DatomicUtil.createAttributeIndex(key, elementClass, this);
+        FluxUtil.createAttributeIndex(key, elementClass, this);
     }
 
     @Override
     public <T extends Element> Set<String> getIndexedKeys(Class<T> elementClass) {
-        return DatomicUtil.getIndexedAttributes(elementClass, this);
+        return FluxUtil.getIndexedAttributes(elementClass, this);
     }
 
     public Date getTransactionTime() {
@@ -333,10 +332,10 @@ public class DatomicGraph implements MetaGraph<Database>, KeyIndexableGraph, Tim
             tx.get().clear();
         } catch (InterruptedException e) {
             tx.get().clear();
-            throw new RuntimeException(DatomicGraph.DATOMIC_ERROR_EXCEPTION_MESSAGE);
+            throw new RuntimeException(FluxGraph.DATOMIC_ERROR_EXCEPTION_MESSAGE);
         } catch (ExecutionException e) {
             tx.get().clear();
-            throw new RuntimeException(DatomicGraph.DATOMIC_ERROR_EXCEPTION_MESSAGE);
+            throw new RuntimeException(FluxGraph.DATOMIC_ERROR_EXCEPTION_MESSAGE);
         }
     }
 
@@ -353,12 +352,12 @@ public class DatomicGraph implements MetaGraph<Database>, KeyIndexableGraph, Tim
 
     private void removeEdge(final Edge edge, boolean transact) {
         // Retract the edge element in its totality
-        DatomicEdge theEdge =  (DatomicEdge)edge;
+        FluxEdge theEdge =  (FluxEdge)edge;
         tx.get().add(Util.list(":db.fn/retractEntity", theEdge.getId()));
 
         // Get the in and out vertex (as their version also needs to be updated)
-        DatomicVertex inVertex = (DatomicVertex)theEdge.getVertex(Direction.IN);
-        DatomicVertex outVertex = (DatomicVertex)theEdge.getVertex(Direction.OUT);
+        FluxVertex inVertex = (FluxVertex)theEdge.getVertex(Direction.IN);
+        FluxVertex outVertex = (FluxVertex)theEdge.getVertex(Direction.OUT);
 
         // Update the transaction info of the edge and both vertices (moving up their current transaction)
         addTransactionInfo(theEdge, inVertex, outVertex);
@@ -379,7 +378,7 @@ public class DatomicGraph implements MetaGraph<Database>, KeyIndexableGraph, Tim
         tx.get().add(Util.list(":db.fn/retractEntity", vertex.getId()));
 
         // Update the transaction info of the vertex
-        addTransactionInfo((DatomicVertex)vertex);
+        addTransactionInfo((FluxVertex)vertex);
 
         // We need to commit
         if (transact) {
@@ -394,7 +393,7 @@ public class DatomicGraph implements MetaGraph<Database>, KeyIndexableGraph, Tim
                        ":where [?entity :db/ident :graph.element/type] ] ", getRawGraph()).iterator().hasNext();
     }
 
-    // Setup of the various attribute types required for DatomicGraph
+    // Setup of the various attribute types required for FluxGraph
     protected void setupMetaModel() throws ExecutionException, InterruptedException {
 
         // The graph element type attribute
