@@ -6,6 +6,7 @@ import datomic.Datom;
 
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 import java.util.List;
 
 /**
@@ -90,6 +91,8 @@ public class FluxIterable<T extends Element> implements CloseableIterable<T> {
         }
 
         protected Object getNext() {
+            if (!iterator.hasNext())
+                throw new NoSuchElementException();
             return iterator.next().e();
         }
 
@@ -104,6 +107,8 @@ public class FluxIterable<T extends Element> implements CloseableIterable<T> {
         }
 
         protected Object getNext() {
+            if (!iterator.hasNext())
+                throw new NoSuchElementException();
             return iterator.next().get(0);
         }
 
@@ -119,6 +124,8 @@ public class FluxIterable<T extends Element> implements CloseableIterable<T> {
         }
 
         protected Object getNext() {
+            if (!iterator.hasNext())
+                throw new NoSuchElementException();
             return iterator.next();
         }
 
