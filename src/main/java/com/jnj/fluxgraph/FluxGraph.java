@@ -148,7 +148,7 @@ public class FluxGraph implements MetaGraph<Database>, KeyIndexableGraph, TimeAw
     public TimeAwareEdge addEdge(final Object id, final Vertex outVertex, final Vertex inVertex, final String label) {
         // Create the new edge
         final FluxEdge edge = new FluxEdge(this, null);
-        tx.get().add(Util.map(":db/id", edge.id,
+        addToTransaction(Util.map(":db/id", edge.id,
                               ":graph.edge/label", label,
                               ":graph.edge/inVertex", inVertex.getId(),
                               ":graph.edge/outVertex", outVertex.getId()));
@@ -326,7 +326,7 @@ public class FluxGraph implements MetaGraph<Database>, KeyIndexableGraph, TimeAw
         try {
             // We are adding a fact which dates back to the past. Add the required meta data on the transaction
             if (transactionTime.get() != null) {
-                tx.get().add(datomic.Util.map(":db/id", datomic.Peer.tempid(":db.part/tx"), ":db/txInstant", transactionTime.get()));
+                addToTransaction(datomic.Util.map(":db/id", datomic.Peer.tempid(":db.part/tx"), ":db/txInstant", transactionTime.get()));
             }
             connection.transact(tx.get()).get();
             tx.get().clear();
@@ -346,14 +346,14 @@ public class FluxGraph implements MetaGraph<Database>, KeyIndexableGraph, TimeAw
     // Ensures that add-transaction-info database function is called during the transaction execution. This will setup the linked list of transactions
     public void addTransactionInfo(TimeAwareElement... elements) {
         for (TimeAwareElement element : elements) {
-            tx.get().add(Util.list(":add-transaction-info", element.getId(), element.getTimeId()));
+            addToTransaction(Util.list(":add-transaction-info", element.getId(), element.getTimeId()));
         }
     }
 
     private void removeEdge(final Edge edge, boolean transact) {
         // Retract the edge element in its totality
         FluxEdge theEdge =  (FluxEdge)edge;
-        tx.get().add(Util.list(":db.fn/retractEntity", theEdge.getId()));
+        addToTransaction(Util.list(":db.fn/retractEntity", theEdge.getId()));
 
         // Get the in and out vertex (as their version also needs to be updated)
         FluxVertex inVertex = (FluxVertex)theEdge.getVertex(Direction.IN);
@@ -375,7 +375,7 @@ public class FluxGraph implements MetaGraph<Database>, KeyIndexableGraph, TimeAw
             removeEdge(edgesIt.next(), false);
         }
         // Retract the vertex element in its totality
-        tx.get().add(Util.list(":db.fn/retractEntity", vertex.getId()));
+        addToTransaction(Util.list(":db.fn/retractEntity", vertex.getId()));
 
         // Update the transaction info of the vertex
         addTransactionInfo((FluxVertex)vertex);
@@ -397,7 +397,7 @@ public class FluxGraph implements MetaGraph<Database>, KeyIndexableGraph, TimeAw
     protected void setupMetaModel() throws ExecutionException, InterruptedException {
 
         // The graph element type attribute
-        tx.get().add(Util.map(":db/id", Peer.tempid(":db.part/db"),
+        addToTransaction(Util.map(":db/id", Peer.tempid(":db.part/db"),
                               ":db/ident", ":graph.element/type",
                               ":db/valueType", ":db.type/ref",
                               ":db/cardinality", ":db.cardinality/one",
@@ -406,15 +406,15 @@ public class FluxGraph implements MetaGraph<Database>, KeyIndexableGraph, TimeAw
                               ":db.install/_attribute", ":db.part/db"));
 
         // The graph vertex element type
-        tx.get().add(Util.map(":db/id", Peer.tempid(":db.part/user"),
+        addToTransaction(Util.map(":db/id", Peer.tempid(":db.part/user"),
                               ":db/ident", ":graph.element.type/vertex"));
 
         // The graph edge element type
-        tx.get().add(Util.map(":db/id", Peer.tempid(":db.part/user"),
+        addToTransaction(Util.map(":db/id", Peer.tempid(":db.part/user"),
                               ":db/ident", ":graph.element.type/edge"));
 
         // The incoming vertex of an edge attribute
-        tx.get().add(Util.map(":db/id", Peer.tempid(":db.part/db"),
+        addToTransaction(Util.map(":db/id", Peer.tempid(":db.part/db"),
                               ":db/ident", ":graph.edge/inVertex",
                               ":db/valueType", ":db.type/ref",
                               ":db/cardinality", ":db.cardinality/one",
@@ -423,7 +423,7 @@ public class FluxGraph implements MetaGraph<Database>, KeyIndexableGraph, TimeAw
                               ":db.install/_attribute", ":db.part/db"));
 
         // The outgoing vertex of an edge attribute
-        tx.get().add(Util.map(":db/id", Peer.tempid(":db.part/db"),
+        addToTransaction(Util.map(":db/id", Peer.tempid(":db.part/db"),
                               ":db/ident", ":graph.edge/outVertex",
                               ":db/valueType", ":db.type/ref",
                               ":db/cardinality", ":db.cardinality/one",
@@ -432,7 +432,7 @@ public class FluxGraph implements MetaGraph<Database>, KeyIndexableGraph, TimeAw
                               ":db.install/_attribute", ":db.part/db"));
 
         // The outgoing vertex of an edge attribute
-        tx.get().add(Util.map(":db/id", Peer.tempid(":db.part/db"),
+        addToTransaction(Util.map(":db/id", Peer.tempid(":db.part/db"),
                               ":db/ident", ":graph.edge/label",
                               ":db/valueType", ":db.type/string",
                               ":db/cardinality", ":db.cardinality/one",
@@ -441,7 +441,7 @@ public class FluxGraph implements MetaGraph<Database>, KeyIndexableGraph, TimeAw
                               ":db.install/_attribute", ":db.part/db"));
 
         // The previous transaction through which the entity (vertex or edge) was changed
-        tx.get().add(Util.map(":db/id", Peer.tempid(":db.part/db"),
+        addToTransaction(Util.map(":db/id", Peer.tempid(":db.part/db"),
                               ":db/ident", ":graph.element/previousTransaction",
                               ":db/valueType", ":db.type/ref",
                               ":db/cardinality", ":db.cardinality/many",
@@ -449,7 +449,7 @@ public class FluxGraph implements MetaGraph<Database>, KeyIndexableGraph, TimeAw
                               ":db/index", true,
                               ":db.install/_attribute", ":db.part/db"));
 
-        tx.get().add(Util.map(":db/id", Peer.tempid(":db.part/db"),
+        addToTransaction(Util.map(":db/id", Peer.tempid(":db.part/db"),
                               ":db/ident", ":graph.element/previousTransaction/elementId",
                               ":db/valueType", ":db.type/ref",
                               ":db/cardinality", ":db.cardinality/one",
@@ -457,7 +457,7 @@ public class FluxGraph implements MetaGraph<Database>, KeyIndexableGraph, TimeAw
                               ":db/index", true,
                               ":db.install/_attribute", ":db.part/db"));
 
-        tx.get().add(Util.map(":db/id", Peer.tempid(":db.part/db"),
+        addToTransaction(Util.map(":db/id", Peer.tempid(":db.part/db"),
                               ":db/ident", ":graph.element/previousTransaction/transactionId",
                               ":db/valueType", ":db.type/ref",
                               ":db/cardinality", ":db.cardinality/one",
@@ -465,22 +465,26 @@ public class FluxGraph implements MetaGraph<Database>, KeyIndexableGraph, TimeAw
                               ":db/index", true,
                               ":db.install/_attribute", ":db.part/db"));
 
-        String addTransactionInfoCode = "Object transactInfoId = tempid(\":db.part/user\");\n" +
-                                        "return list(list(\":db/add\", transactInfoId, \":graph.element/previousTransaction/transactionId\", lastTransaction), list(\":db/add\", transactInfoId, \":graph.element/previousTransaction/elementId\", id), list(\":db/add\", tempid(\":db.part/tx\"), \":graph.element/previousTransaction\", transactInfoId));\n";
+        String addTransactionInfoCode =
+          "Object transactInfoId = tempid(\":db.part/user\");\n" +
+          "return list(list(\":db/add\", transactInfoId, \":graph.element/previousTransaction/transactionId\", lastTransaction), " +
+                      "list(\":db/add\", transactInfoId, \":graph.element/previousTransaction/elementId\", id), " +
+                      "list(\":db/add\", tempid(\":db.part/tx\"), \":graph.element/previousTransaction\", transactInfoId));\n";
+
 
         // Database function that retrieves the previous transaction and sets the new one
-        tx.get().add(Util.map(":db/id", Peer.tempid(":db.part/user"),
+        addToTransaction(Util.map(":db/id", Peer.tempid(":db.part/user"),
                               ":db/ident", ":add-transaction-info",
                               ":db/fn", Peer.function(Util.map("lang", "java",
                                                       "params", Util.list("db", "id", "lastTransaction"),
                                                       "code", addTransactionInfoCode))));
 
         // Add new graph partition
-        tx.get().add(Util.map(":db/id", Peer.tempid(":db.part/db"),
+        addToTransaction(Util.map(":db/id", Peer.tempid(":db.part/db"),
                               ":db/ident", ":graph",
                               ":db.install/_partition", ":db.part/db"));
 
-        tx.get().add(datomic.Util.map(":db/id", datomic.Peer.tempid(":db.part/tx"), ":db/txInstant", new Date(0)));
+        addToTransaction(datomic.Util.map(":db/id", datomic.Peer.tempid(":db.part/tx"), ":db/txInstant", new Date(0)));
         connection.transact(tx.get()).get();
         tx.get().clear();
     }
