@@ -110,7 +110,7 @@ public abstract class FluxElement implements TimeAwareElement {
             // If the property does not exist yet, create the attribute if required and create the appropriate transaction
             if (getProperty(key) == null) {
                 // We first need to create the new attribute on the fly
-                FluxUtil.createAttributeDefinition(key, value.getClass(), this.getClass(), fluxGraph);
+                FluxUtil.createAttributeDefinition(key, value.getClass(), this.getClass(), fluxGraph, false);
                 fluxGraph.addToTransaction(Util.map(":db/id", id,
                         FluxUtil.createKey(key, value.getClass(), this.getClass()), value));
             }
@@ -122,7 +122,7 @@ public abstract class FluxElement implements TimeAwareElement {
                 }
                 // Value types do not match. Retract original fact and add new one
                 else {
-                    FluxUtil.createAttributeDefinition(key, value.getClass(), this.getClass(), fluxGraph);
+                    FluxUtil.createAttributeDefinition(key, value.getClass(), this.getClass(), fluxGraph, false);
                     fluxGraph.addToTransaction(Util.list(":db/retract", id,
                             FluxUtil.createKey(key, value.getClass(), this.getClass()), getProperty(key)));
                     fluxGraph.addToTransaction(Util.map(":db/id", id,
