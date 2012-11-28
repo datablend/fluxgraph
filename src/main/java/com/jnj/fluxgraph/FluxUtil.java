@@ -73,9 +73,9 @@ public class FluxUtil {
                                                                       ":db.install/_attribute", ":db.part/db"), datomic.Util.map(":db/id", datomic.Peer.tempid(":db.part/tx"), ":db/txInstant", graph.getTransactionTime()))).get();
                 }
             } catch (InterruptedException e) {
-                throw new RuntimeException(FluxGraph.DATOMIC_ERROR_EXCEPTION_MESSAGE);
+                throw new RuntimeException(e.getMessage(), e);
             } catch (ExecutionException e) {
-                throw new RuntimeException(FluxGraph.DATOMIC_ERROR_EXCEPTION_MESSAGE);
+                throw new RuntimeException(e.getMessage(), e);
             }
         }
     }
@@ -94,11 +94,11 @@ public class FluxUtil {
                 graph.getConnection().transact(Util.list(Util.map(":db/id", attribute,
                                                                   ":db/index", index))).get();
             } catch(ClassNotFoundException e) {
-                throw new RuntimeException(FluxGraph.DATOMIC_ERROR_EXCEPTION_MESSAGE);
+                throw new RuntimeException(e.getMessage(), e);
             } catch (InterruptedException e) {
-                throw new RuntimeException(FluxGraph.DATOMIC_ERROR_EXCEPTION_MESSAGE);
+                throw new RuntimeException(e.getMessage(), e);
             } catch (ExecutionException e) {
-                throw new RuntimeException(FluxGraph.DATOMIC_ERROR_EXCEPTION_MESSAGE);
+                throw new RuntimeException(e.getMessage(), e);
             }
         }
     }
