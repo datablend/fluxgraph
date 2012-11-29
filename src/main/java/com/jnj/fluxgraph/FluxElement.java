@@ -145,7 +145,6 @@ public abstract class FluxElement implements TimeAwareElement {
                     key, value));
         }
         fluxGraph.addTransactionInfo(this);
-        fluxGraph.transact();
     }
 
     public Interval getTimeInterval() {
@@ -171,7 +170,6 @@ public abstract class FluxElement implements TimeAwareElement {
             }
         }
         fluxGraph.addTransactionInfo(this);
-        fluxGraph.transact();
         return oldvalue;
     }
 

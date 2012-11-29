@@ -156,31 +156,12 @@ public class FluxGraph implements MetaGraph<Database>, KeyIndexableGraph, TimeAw
         // Update the transaction info of both vertices (moving up their current transaction)
         addTransactionInfo((TimeAwareVertex)inVertex, (TimeAwareVertex)outVertex);
 
-        // Transact
-        transact();
-
-        // Set the real id on the entity
-        edge.id = getRawGraph().entid(edge.uuid);
         return edge;
     }
 
     @Override
-    public void removeEdge(final Edge edge) {
-        removeEdge(edge, true);
-    }
-
-    @Override
     public TimeAwareVertex addVertex(final Object id) {
-        // Create the new vertex
-        FluxVertex vertex = new FluxVertex(this, null);
-
-        // Transact
-        transact();
-
-        // Set the real id on the entity
-        vertex.id = getRawGraph().entid(vertex.uuid);
-
-        return vertex;
+        return new FluxVertex(this, null);
     }
 
     @Override
@@ -206,11 +187,6 @@ public class FluxGraph implements MetaGraph<Database>, KeyIndexableGraph, TimeAw
     @Override
     public Iterable<Vertex> getVertices(String key, Object value) {
         return vertexIndex.get(key, value);
-    }
-
-    @Override
-    public void removeVertex(final Vertex vertex) {
-        removeVertex(vertex, true);
     }
 
     @Override
@@ -343,14 +319,16 @@ public class FluxGraph implements MetaGraph<Database>, KeyIndexableGraph, TimeAw
         return connection;
     }
 
-    // Ensures that add-transaction-info database function is called during the transaction execution. This will setup the linked list of transactions
+    // Ensures that add-transaction-info database function is called during the
+    // transaction execution. This will setup the linked list of transactions
     public void addTransactionInfo(TimeAwareElement... elements) {
         for (TimeAwareElement element : elements) {
             addToTransaction(Util.list(":add-transaction-info", element.getId(), element.getTimeId()));
         }
     }
 
-    private void removeEdge(final Edge edge, boolean transact) {
+    @Override
+    private void removeEdge(final Edge edge) {
         // Retract the edge element in its totality
         FluxEdge theEdge =  (FluxEdge)edge;
         addToTransaction(Util.list(":db.fn/retractEntity", theEdge.getId()));
@@ -361,29 +339,20 @@ public class FluxGraph implements MetaGraph<Database>, KeyIndexableGraph, TimeAw
 
         // Update the transaction info of the edge and both vertices (moving up their current transaction)
         addTransactionInfo(theEdge, inVertex, outVertex);
-
-        // We need to commit
-        if (transact) {
-            transact();
-        }
     }
 
-    private void removeVertex(Vertex vertex, boolean transact) {
+    @Override
+    private void removeVertex(Vertex vertex) {
         // Retrieve all edges associated with this vertex and remove them one bye one
         Iterator<Edge> edgesIt = vertex.getEdges(Direction.BOTH).iterator();
         while (edgesIt.hasNext()) {
-            removeEdge(edgesIt.next(), false);
+            removeEdge(edgesIt.next());
         }
         // Retract the vertex element in its totality
         addToTransaction(Util.list(":db.fn/retractEntity", vertex.getId()));
 
         // Update the transaction info of the vertex
         addTransactionInfo((FluxVertex)vertex);
-
-        // We need to commit
-        if (transact) {
-            transact();
-        }
     }
 
     // Helper method to check whether the meta model of the graph still needs to be setup
