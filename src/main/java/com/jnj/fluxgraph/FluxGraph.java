@@ -148,7 +148,7 @@ public class FluxGraph implements MetaGraph<Database>, KeyIndexableGraph, TimeAw
     public TimeAwareEdge addEdge(final Object id, final Vertex outVertex, final Vertex inVertex, final String label) {
         // Create the new edge
         final FluxEdge edge = new FluxEdge(this, null);
-        addToTransaction(Util.map(":db/id", edge.id,
+        addToTransaction(Util.map(":db/id", edge.getId(),
                               ":graph.edge/label", label,
                               ":graph.edge/inVertex", inVertex.getId(),
                               ":graph.edge/outVertex", outVertex.getId()));

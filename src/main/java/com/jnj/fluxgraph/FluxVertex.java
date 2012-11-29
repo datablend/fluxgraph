@@ -15,9 +15,9 @@ public class FluxVertex extends FluxElement implements TimeAwareVertex {
 
     protected FluxVertex(final FluxGraph fluxGraph, final Database database) {
         super(fluxGraph, database);
-        fluxGraph.addToTransaction(Util.map(":db/id", id,
+        fluxGraph.addToTransaction(Util.map(":db/id", getId(),
                                               ":graph.element/type", ":graph.element.type/vertex",
-                                              ":db/ident", uuid));
+                                              ":db/ident", getUUID()));
     }
 
     public FluxVertex(final FluxGraph fluxGraph, final Database database, final Object id) {
@@ -31,7 +31,7 @@ public class FluxVertex extends FluxElement implements TimeAwareVertex {
         Object previousTimeId = FluxUtil.getPreviousTransaction(fluxGraph, this);
         if (previousTimeId != null) {
             // Create a new version of the vertex timescoped to the previous time id
-            return new FluxVertex(fluxGraph, fluxGraph.getRawGraph(previousTimeId), id);
+            return new FluxVertex(fluxGraph, fluxGraph.getRawGraph(previousTimeId), getId());
         }
         return null;
     }
@@ -41,10 +41,10 @@ public class FluxVertex extends FluxElement implements TimeAwareVertex {
         // Retrieve the next version time id
         Object nextTimeId = FluxUtil.getNextTransactionId(fluxGraph, this);
         if (nextTimeId != null) {
-            FluxVertex nextVertexVersion = new FluxVertex(fluxGraph, fluxGraph.getRawGraph(nextTimeId), id);
+            FluxVertex nextVertexVersion = new FluxVertex(fluxGraph, fluxGraph.getRawGraph(nextTimeId), getId());
             // If no next version exists, the version of the edge is the current version (timescope with a null database)
             if (FluxUtil.getNextTransactionId(fluxGraph, nextVertexVersion) == null) {
-                return new FluxVertex(fluxGraph, null, id);
+                return new FluxVertex(fluxGraph, null, getId());
             }
             else {
                 return nextVertexVersion;
@@ -154,7 +154,7 @@ public class FluxVertex extends FluxElement implements TimeAwareVertex {
         Collection<List<Object>> inEdges = Peer.q("[:find ?edge " +
                                                    ":in $ ?vertex [?label ...] " +
                                                    ":where [?edge :graph.edge/inVertex ?vertex] " +
-                                                          "[?edge :graph.edge/label ?label ] ]", getDatabase(), id, labels);
+                                                          "[?edge :graph.edge/label ?label ] ]", getDatabase(), getId(), labels);
         return new FluxIterable(inEdges, fluxGraph, database, Edge.class);
     }
 
@@ -170,7 +170,7 @@ public class FluxVertex extends FluxElement implements TimeAwareVertex {
         Collection<List<Object>> outEdges = Peer.q("[:find ?edge " +
                                                     ":in $ ?vertex [?label ...] " +
                                                     ":where [?edge :graph.edge/outVertex ?vertex] " +
-                                                           "[?edge :graph.edge/label ?label ] ]", getDatabase(), id, labels);
+                                                           "[?edge :graph.edge/label ?label ] ]", getDatabase(), getId(), labels);
         return new FluxIterable(outEdges, fluxGraph, database, Edge.class);
     }
 

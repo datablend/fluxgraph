@@ -20,20 +20,29 @@ public abstract class FluxElement implements TimeAwareElement {
 
     protected final Database database;
     protected final FluxGraph fluxGraph;
-    protected Object uuid;
+    private Object uuid;
+    private Object tempId;
     protected Object id;
 
     protected FluxElement(final FluxGraph fluxGraph, final Database database) {
         this.database = database;
         this.fluxGraph = fluxGraph;
         // UUID used to retrieve the actual datomic id later on
-        uuid = Keyword.intern(UUID.randomUUID().toString());
-        id = Peer.tempid(":graph");
+        tempId = Peer.tempid(":graph");
+    }
+
+    protected Object getUUID() {
+        if (uuid == null)
+            uuid = Keyword.intern(UUID.randomUUID().toString());
+        return uuid;
     }
 
     @Override
     public Object getId() {
-        return id;
+        if (id != null) return id;
+        id = getDatabase().entid(getUUID());
+        if (id != null) return id;
+        return tempId;
     }
 
     @Override
@@ -51,7 +60,7 @@ public abstract class FluxElement implements TimeAwareElement {
         // An element is deleted if we can no longer find any reference to it in the current version of the graph
         Collection<List<Object>> found = (Peer.q("[:find ?id " +
                                                   ":in $ ?id " +
-                                                  ":where [?id _ _ ] ]", getDatabase(), id));
+                                                  ":where [?id _ _ ] ]", getDatabase(), getId()));
         return found.isEmpty();
     }
 
@@ -61,7 +70,7 @@ public abstract class FluxElement implements TimeAwareElement {
             throw new IllegalArgumentException("It is not possible to get properties on a deleted element");
         }
         Set<String> finalproperties = new HashSet<String>();
-        Set properties = getDatabase().entity(id).keySet();
+        Set properties = getDatabase().entity(getId()).keySet();
         Iterator<Keyword> propertiesit = properties.iterator();
         while (propertiesit.hasNext()) {
             Keyword property = propertiesit.next();
@@ -78,21 +87,21 @@ public abstract class FluxElement implements TimeAwareElement {
             throw new IllegalArgumentException("It is not possible to get properties on a deleted element");
         }
         if (!FluxUtil.isReservedKey(key)) {
-            Set properties = getDatabase().entity(id).keySet();
+            Set properties = getDatabase().entity(getId()).keySet();
             Iterator<Keyword> propertiesit = properties.iterator();
             // We need to iterate, as we don't know the exact type (although we ensured that only one attribute will have that name)
             while (propertiesit.hasNext()) {
                 Keyword property = propertiesit.next();
                 String propertyname = FluxUtil.getPropertyName(property);
                 if (key.equals(propertyname)) {
-                    return getDatabase().entity(id).get(property);
+                    return getDatabase().entity(getId()).get(property);
                 }
             }
             // We didn't find the value
             return null;
         }
         else {
-            return getDatabase().entity(id).get(key);
+            return getDatabase().entity(getId()).get(key);
         }
     }
 
@@ -111,28 +120,28 @@ public abstract class FluxElement implements TimeAwareElement {
             if (getProperty(key) == null) {
                 // We first need to create the new attribute on the fly
                 FluxUtil.createAttributeDefinition(key, value.getClass(), this.getClass(), fluxGraph, false);
-                fluxGraph.addToTransaction(Util.map(":db/id", id,
+                fluxGraph.addToTransaction(Util.map(":db/id", getId(),
                         FluxUtil.createKey(key, value.getClass(), this.getClass()), value));
             }
             else {
                 // Value types match, just perform an update
                 if (getProperty(key).getClass().equals(value.getClass())) {
-                    fluxGraph.addToTransaction(Util.map(":db/id", id,
+                    fluxGraph.addToTransaction(Util.map(":db/id", getId(),
                             FluxUtil.createKey(key, value.getClass(), this.getClass()), value));
                 }
                 // Value types do not match. Retract original fact and add new one
                 else {
                     FluxUtil.createAttributeDefinition(key, value.getClass(), this.getClass(), fluxGraph, false);
-                    fluxGraph.addToTransaction(Util.list(":db/retract", id,
+                    fluxGraph.addToTransaction(Util.list(":db/retract", getId(),
                             FluxUtil.createKey(key, value.getClass(), this.getClass()), getProperty(key)));
-                    fluxGraph.addToTransaction(Util.map(":db/id", id,
+                    fluxGraph.addToTransaction(Util.map(":db/id", getId(),
                             FluxUtil.createKey(key, value.getClass(), this.getClass()), value));
                 }
             }
         }
         // A datomic graph specific property
         else {
-            fluxGraph.addToTransaction(Util.map(":db/id", id,
+            fluxGraph.addToTransaction(Util.map(":db/id", getId(),
                     key, value));
         }
         fluxGraph.addTransactionInfo(this);
@@ -157,7 +166,7 @@ public abstract class FluxElement implements TimeAwareElement {
         Object oldvalue = getProperty(key);
         if (oldvalue != null) {
             if (!FluxUtil.isReservedKey(key)) {
-                fluxGraph.addToTransaction(Util.list(":db/retract", id,
+                fluxGraph.addToTransaction(Util.list(":db/retract", getId(),
                                        FluxUtil.createKey(key, oldvalue.getClass(), this.getClass()), oldvalue));
             }
         }
@@ -171,13 +180,13 @@ public abstract class FluxElement implements TimeAwareElement {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         FluxElement that = (FluxElement) o;
-        if (id != null ? !id.equals(that.id) : that.id != null) return false;
+        if (getId() != null ? !getId().equals(that.getId()) : that.getId() != null) return false;
         return true;
     }
 
     @Override
     public int hashCode() {
-        return id != null ? id.hashCode() : 0;
+        return getId() != null ? getId().hashCode() : 0;
     }
 
     protected Database getDatabase() {
@@ -201,7 +210,7 @@ public abstract class FluxElement implements TimeAwareElement {
         // Create the set of facts
         Set<Object> theFacts = new HashSet<Object>();
         // Get the entity
-        Entity entity = getDatabase().entity(id);
+        Entity entity = getDatabase().entity(getId());
         // Add the base facts associated with this edge
         Set properties = entity.keySet();
         Iterator<Keyword> propertiesIt = properties.iterator();
@@ -209,7 +218,7 @@ public abstract class FluxElement implements TimeAwareElement {
             Keyword property = propertiesIt.next();
             // Add all properties (except the ident property (is only originally used for retrieving the id of the created elements)
             if (!property.toString().equals(":db/ident")) {
-                theFacts.add(FluxUtil.map(":db/id", id, property.toString(), entity.get(property).toString()));
+                theFacts.add(FluxUtil.map(":db/id", getId(), property.toString(), entity.get(property).toString()));
             }
         }
         return theFacts;
