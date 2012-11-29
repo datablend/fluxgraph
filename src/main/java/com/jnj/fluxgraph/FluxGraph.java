@@ -17,7 +17,6 @@ public class FluxGraph implements MetaGraph<Database>, KeyIndexableGraph, TimeAw
 
     private final String graphURI;
     private final Connection connection;
-    public static final String DATOMIC_ERROR_EXCEPTION_MESSAGE = "An error occured within the Datomic datastore";
 
     public final Object GRAPH_ELEMENT_TYPE;
     public final Object GRAPH_ELEMENT_TYPE_VERTEX;
@@ -101,9 +100,9 @@ public class FluxGraph implements MetaGraph<Database>, KeyIndexableGraph, TimeAw
             GRAPH_EDGE_OUT_VERTEX = FluxUtil.getIdForAttribute(this, "graph.edge/outVertex");
             GRAPH_EDGE_LABEL = FluxUtil.getIdForAttribute(this, "graph.edge/label");
         } catch (ExecutionException e) {
-            throw new RuntimeException(FluxGraph.DATOMIC_ERROR_EXCEPTION_MESSAGE);
+            throw new RuntimeException(e.getMessage(), e);
         } catch (InterruptedException e) {
-            throw new RuntimeException(FluxGraph.DATOMIC_ERROR_EXCEPTION_MESSAGE);
+            throw new RuntimeException(e.getMessage(), e);
         }
         // Create the required indexes
         this.vertexIndex = new FluxIndex("vertexIndex", this, null, Vertex.class);
@@ -308,10 +307,10 @@ public class FluxGraph implements MetaGraph<Database>, KeyIndexableGraph, TimeAw
             tx.get().clear();
         } catch (InterruptedException e) {
             tx.get().clear();
-            throw new RuntimeException(FluxGraph.DATOMIC_ERROR_EXCEPTION_MESSAGE);
+            throw new RuntimeException(e.getMessage(), e);
         } catch (ExecutionException e) {
             tx.get().clear();
-            throw new RuntimeException(FluxGraph.DATOMIC_ERROR_EXCEPTION_MESSAGE);
+            throw new RuntimeException(e.getMessage(), e);
         }
     }
 
