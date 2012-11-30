@@ -281,7 +281,7 @@ public class FluxGraph implements MetaGraph<Database>, KeyIndexableGraph, TimeAw
     public void clear() {
         Iterator<Vertex> verticesit = getVertices().iterator();
         while (verticesit.hasNext()) {
-            removeVertex(verticesit.next(), false);
+            removeVertex(verticesit.next());
         }
         transact();
     }
@@ -327,7 +327,7 @@ public class FluxGraph implements MetaGraph<Database>, KeyIndexableGraph, TimeAw
     }
 
     @Override
-    private void removeEdge(final Edge edge) {
+    public void removeEdge(final Edge edge) {
         // Retract the edge element in its totality
         FluxEdge theEdge =  (FluxEdge)edge;
         addToTransaction(Util.list(":db.fn/retractEntity", theEdge.getId()));
@@ -341,7 +341,7 @@ public class FluxGraph implements MetaGraph<Database>, KeyIndexableGraph, TimeAw
     }
 
     @Override
-    private void removeVertex(Vertex vertex) {
+    public void removeVertex(Vertex vertex) {
         // Retrieve all edges associated with this vertex and remove them one bye one
         Iterator<Edge> edgesIt = vertex.getEdges(Direction.BOTH).iterator();
         while (edgesIt.hasNext()) {
