@@ -57,6 +57,8 @@ public abstract class FluxElement implements TimeAwareElement {
 
     @Override
     public boolean isDeleted() {
+        // A new, uncommitted element is not deleted!
+        if (tempId != null) return false;
         // An element is deleted if we can no longer find any reference to it in the current version of the graph
         Collection<List<Object>> found = (Peer.q("[:find ?id " +
                                                   ":in $ ?id " +
