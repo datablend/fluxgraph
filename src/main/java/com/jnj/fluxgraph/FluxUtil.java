@@ -55,7 +55,7 @@ public class FluxUtil {
     }
 
     // Create the attribute definition if it does not exist yet
-    public static void createAttributeDefinition(final String key, final Class valueClazz, final Class elementClazz, FluxGraph graph) {
+    public static void createAttributeDefinition(final String key, final Class valueClazz, final Class elementClazz, FluxGraph graph, boolean index) {
         if (!existingAttributeDefinition(key, valueClazz, elementClazz, graph)) {
             try {
                 if (graph.getTransactionTime() == null) {
@@ -63,6 +63,7 @@ public class FluxUtil {
                                                                       ":db/ident", createKey(key, valueClazz, elementClazz),
                                                                       ":db/valueType", mapJavaTypeToDatomicType(valueClazz),
                                                                       ":db/cardinality", ":db.cardinality/one",
+                                                                      ":db/index", index,
                                                                       ":db.install/_attribute", ":db.part/db"))).get();
                 }
                 else {
@@ -70,12 +71,13 @@ public class FluxUtil {
                                                                       ":db/ident", createKey(key, valueClazz, elementClazz),
                                                                       ":db/valueType", mapJavaTypeToDatomicType(valueClazz),
                                                                       ":db/cardinality", ":db.cardinality/one",
+                                                                      ":db/index", index,
                                                                       ":db.install/_attribute", ":db.part/db"), datomic.Util.map(":db/id", datomic.Peer.tempid(":db.part/tx"), ":db/txInstant", graph.getTransactionTime()))).get();
                 }
             } catch (InterruptedException e) {
-                throw new RuntimeException(FluxGraph.DATOMIC_ERROR_EXCEPTION_MESSAGE);
+                throw new RuntimeException(e.getMessage(), e);
             } catch (ExecutionException e) {
-                throw new RuntimeException(FluxGraph.DATOMIC_ERROR_EXCEPTION_MESSAGE);
+                throw new RuntimeException(e.getMessage(), e);
             }
         }
     }
@@ -87,18 +89,19 @@ public class FluxUtil {
             try {
                 if (!existingAttributeDefinition(key, Class.forName(type), elementClazz, graph)) {
                     // Attribute of this type does not exist, create it first
-                    createAttributeDefinition(key, Class.forName(type), elementClazz, graph);
+                    createAttributeDefinition(key, Class.forName(type), elementClazz, graph, index);
+                } else {
+                    // Retrieve the attribute and index it
+                    Object attribute = getAttributeDefinition(key, Class.forName(type), elementClazz, graph);
+                    graph.getConnection().transact(Util.list(Util.map(":db/id", attribute,
+                                                                      ":db/index", index))).get();
                 }
-                // Retrieve the attribute and index it
-                Object attribute = getAttributeDefinition(key, Class.forName(type), elementClazz, graph);
-                graph.getConnection().transact(Util.list(Util.map(":db/id", attribute,
-                                                                  ":db/index", index))).get();
             } catch(ClassNotFoundException e) {
-                throw new RuntimeException(FluxGraph.DATOMIC_ERROR_EXCEPTION_MESSAGE);
+                throw new RuntimeException(e.getMessage(), e);
             } catch (InterruptedException e) {
-                throw new RuntimeException(FluxGraph.DATOMIC_ERROR_EXCEPTION_MESSAGE);
+                throw new RuntimeException(e.getMessage(), e);
             } catch (ExecutionException e) {
-                throw new RuntimeException(FluxGraph.DATOMIC_ERROR_EXCEPTION_MESSAGE);
+                throw new RuntimeException(e.getMessage(), e);
             }
         }
     }
