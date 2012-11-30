@@ -297,6 +297,14 @@ public class FluxGraph implements MetaGraph<Database>, KeyIndexableGraph, TimeAw
         tx.get().add(o);
     }
 
+    public List getTransaction() {
+        return tx.get();
+    }
+
+    public void setTransaction(List list) {
+        tx.set(list);
+    }
+
     public void transact() {
         try {
             // We are adding a fact which dates back to the past. Add the required meta data on the transaction
