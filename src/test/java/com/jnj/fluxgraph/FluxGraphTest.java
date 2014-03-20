@@ -44,7 +44,7 @@ public class FluxGraphTest extends GraphTest {
 
     public void testQueryTestSuite() throws Exception {
         this.stopWatch();
-        doTestSuite(new QueryTestSuite(this));
+        doTestSuite(new GraphQueryTestSuite(this));
         printTestPerformance("QueryTestSuite", this.stopWatch());
     }
 
@@ -72,9 +72,14 @@ public class FluxGraphTest extends GraphTest {
         printTestPerformance("GMLReaderTestSuite", this.stopWatch());
     }
 
-    public Graph generateGraph() {
-        this.currentGraph = new FluxGraph("datomic:mem://tinkerpop" + UUID.randomUUID());
+    public Graph generateGraph(String name) {
+        this.currentGraph = new FluxGraph("datomic:mem://tinkerpop" + name + UUID.randomUUID());
         return this.currentGraph;
+    }
+
+    @Override
+    public Graph generateGraph() {
+        return generateGraph("");
     }
 
     public void doTestSuite(final TestSuite testSuite) throws Exception {

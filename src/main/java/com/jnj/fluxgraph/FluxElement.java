@@ -73,7 +73,7 @@ public abstract class FluxElement implements TimeAwareElement {
     }
 
     @Override
-    public Object getProperty(final String key) {
+    public <T> T getProperty(final String key) {
         if (isDeleted()) {
             throw new IllegalArgumentException("It is not possible to get properties on a deleted element");
         }
@@ -85,14 +85,14 @@ public abstract class FluxElement implements TimeAwareElement {
                 Keyword property = propertiesit.next();
                 String propertyname = FluxUtil.getPropertyName(property);
                 if (key.equals(propertyname)) {
-                    return getDatabase().entity(id).get(property);
+                    return (T)getDatabase().entity(id).get(property);
                 }
             }
             // We didn't find the value
             return null;
         }
         else {
-            return getDatabase().entity(id).get(key);
+            return (T)getDatabase().entity(id).get(key);
         }
     }
 
@@ -104,7 +104,7 @@ public abstract class FluxElement implements TimeAwareElement {
         if (key.equals(StringFactory.LABEL))
             throw new IllegalArgumentException("Property key is reserved for all nodes and edges: " + StringFactory.LABEL);
         if (key.equals(StringFactory.EMPTY_STRING))
-            throw ExceptionFactory.elementKeyCanNotBeEmpty();
+            throw ExceptionFactory.propertyKeyCanNotBeEmpty();
         // A user-defined property
         if (!FluxUtil.isReservedKey(key)) {
             // If the property does not exist yet, create the attribute if required and create the appropriate transaction
@@ -152,7 +152,7 @@ public abstract class FluxElement implements TimeAwareElement {
     }
 
     @Override
-    public Object removeProperty(final String key) {
+    public <T> T removeProperty(final String key) {
         validate();
         Object oldvalue = getProperty(key);
         if (oldvalue != null) {
@@ -163,7 +163,7 @@ public abstract class FluxElement implements TimeAwareElement {
         }
         fluxGraph.addTransactionInfo(this);
         fluxGraph.transact();
-        return oldvalue;
+        return (T)oldvalue;
     }
 
     @Override

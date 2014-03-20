@@ -24,8 +24,8 @@ import org.apache.commons.configuration.Configuration;
 public class FluxGraphConfiguration implements GraphConfiguration {
 
     @Override
-    public Graph configureGraphInstance(Configuration properties) throws GraphConfigurationException {
-        final String graphFile = properties.getString(Tokens.REXSTER_GRAPH_LOCATION);
+    public Graph configureGraphInstance(GraphConfigurationContext context) throws GraphConfigurationException {
+        final String graphFile = context.getProperties().getString(Tokens.REXSTER_GRAPH_LOCATION);
 
         if (graphFile == null || graphFile.length() == 0) {
             throw new GraphConfigurationException("Check graph configuration. Missing or empty configuration element: " + Tokens.REXSTER_GRAPH_LOCATION);
