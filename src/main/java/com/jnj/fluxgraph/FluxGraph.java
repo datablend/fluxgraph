@@ -1,6 +1,8 @@
 package com.jnj.fluxgraph;
 
+import clojure.lang.ExceptionInfo;
 import com.tinkerpop.blueprints.*;
+import com.tinkerpop.blueprints.util.DefaultGraphQuery;
 import com.tinkerpop.blueprints.util.ExceptionFactory;
 import com.tinkerpop.blueprints.util.StringFactory;
 import datomic.*;
@@ -51,7 +53,7 @@ public class FluxGraph implements MetaGraph<Database>, KeyIndexableGraph, TimeAw
         FEATURES.supportsDuplicateEdges = true;
         FEATURES.supportsSelfLoops = true;
         FEATURES.isPersistent = false;
-        FEATURES.isRDFModel = false;
+        //FEATURES.isRDFModel = false;
         FEATURES.supportsVertexIteration = true;
         FEATURES.supportsEdgeIteration = true;
         FEATURES.supportsVertexIndex = false;
@@ -145,23 +147,36 @@ public class FluxGraph implements MetaGraph<Database>, KeyIndexableGraph, TimeAw
     }
 
     @Override
+    public GraphQuery query() {
+        return new DefaultGraphQuery(this);
+    }
+
+    @Override
     public TimeAwareEdge addEdge(final Object id, final Vertex outVertex, final Vertex inVertex, final String label) {
         // Create the new edge
-        final FluxEdge edge = new FluxEdge(this, null);
-        tx.get().add(Util.map(":db/id", edge.id,
-                              ":graph.edge/label", label,
-                              ":graph.edge/inVertex", inVertex.getId(),
-                              ":graph.edge/outVertex", outVertex.getId()));
+        try {
+            final FluxEdge edge = new FluxEdge(this, null);
+            tx.get().add(Util.map(":db/id", edge.id,
+                                  ":graph.edge/label", label,
+                                  ":graph.edge/inVertex", inVertex.getId(),
+                                  ":graph.edge/outVertex", outVertex.getId()));
 
-        // Update the transaction info of both vertices (moving up their current transaction)
-        addTransactionInfo((TimeAwareVertex)inVertex, (TimeAwareVertex)outVertex);
+            // Update the transaction info of both vertices (moving up their current transaction)
+            addTransactionInfo((TimeAwareVertex)inVertex, (TimeAwareVertex)outVertex);
 
-        // Transact
-        transact();
+            // Transact
+            transact();
 
-        // Set the real id on the entity
-        edge.id = getRawGraph().entid(edge.uuid);
-        return edge;
+            // Set the real id on the entity
+            edge.id = getRawGraph().entid(edge.uuid);
+            return edge;
+        } catch (ExceptionInfo e) {
+            if (e.toString().contains("not a valid :string for attribute")) {
+                throw new IllegalArgumentException(e.toString());
+            } else {
+                throw e;
+            }
+        }
     }
 
     @Override
@@ -290,7 +305,7 @@ public class FluxGraph implements MetaGraph<Database>, KeyIndexableGraph, TimeAw
     }
 
     @Override
-    public <T extends Element> void createKeyIndex(String key, Class<T> elementClass) {
+    public <T extends Element> void createKeyIndex(String key, Class<T> elementClass, Parameter... parameter) {
         FluxUtil.createAttributeIndex(key, elementClass, this);
     }
 

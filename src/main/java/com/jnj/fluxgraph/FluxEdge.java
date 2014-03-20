@@ -104,4 +104,8 @@ public class FluxEdge extends FluxElement implements TimeAwareEdge {
         return theFacts;
     }
 
+    @Override
+    public void remove() {
+        fluxGraph.removeEdge(this);
+    }
 }

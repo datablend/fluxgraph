@@ -12,8 +12,8 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <blueprints.version>2.1.0</blueprints.version>
-        <rexster.version>2.1.0</rexster.version>
+        <blueprints.version>2.4.0</blueprints.version>
+        <rexster.version>2.4.0</rexster.version>
         <datomic-free.version>0.8.3538</datomic-free.version>
         <joda-time.version>2.1</joda-time.version>
     </properties>

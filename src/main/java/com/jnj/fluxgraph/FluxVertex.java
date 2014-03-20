@@ -2,6 +2,7 @@ package com.jnj.fluxgraph;
 
 import com.tinkerpop.blueprints.*;
 import com.tinkerpop.blueprints.util.DefaultQuery;
+import com.tinkerpop.blueprints.util.DefaultVertexQuery;
 import com.tinkerpop.blueprints.util.MultiIterable;
 import com.tinkerpop.blueprints.util.StringFactory;
 import datomic.*;
@@ -122,8 +123,13 @@ public class FluxVertex extends FluxElement implements TimeAwareVertex {
     }
 
     @Override
-    public Query query() {
-        return new DefaultQuery(this);
+    public VertexQuery query() {
+        return new DefaultVertexQuery(this);
+    }
+
+    @Override
+    public Edge addEdge(String label, Vertex vertex) {
+        return fluxGraph.addEdge(null, this, vertex, label);
     }
 
     @Override
@@ -179,4 +185,8 @@ public class FluxVertex extends FluxElement implements TimeAwareVertex {
         return new FluxIterable(outEdges, fluxGraph, database, Edge.class);
     }
 
+    @Override
+    public void remove() {
+        fluxGraph.removeVertex(this);
+    }
 }
