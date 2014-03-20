@@ -301,16 +301,25 @@ public class FluxGraph implements MetaGraph<Database>, KeyIndexableGraph, TimeAw
 
     @Override
     public <T extends Element> void dropKeyIndex(String key, Class<T> elementClass) {
+        if (elementClass == null) {
+            throw ExceptionFactory.classForElementCannotBeNull();
+        }
         FluxUtil.removeAttributeIndex(key, elementClass, this);
     }
 
     @Override
     public <T extends Element> void createKeyIndex(String key, Class<T> elementClass, Parameter... parameter) {
+        if (elementClass == null) {
+            throw ExceptionFactory.classForElementCannotBeNull();
+        }
         FluxUtil.createAttributeIndex(key, elementClass, this);
     }
 
     @Override
     public <T extends Element> Set<String> getIndexedKeys(Class<T> elementClass) {
+        if (elementClass == null) {
+            throw ExceptionFactory.classForElementCannotBeNull();
+        }
         return FluxUtil.getIndexedAttributes(elementClass, this);
     }
 
